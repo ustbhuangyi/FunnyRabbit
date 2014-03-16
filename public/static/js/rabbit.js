@@ -1,10 +1,5 @@
 /*
-* 
 *           File:  rabbit.js
-*           Path:  /widget/zhongqiu/rabbit.js
-*         Author:  HuangYi
-*       Modifier:  HuangYi
-*       Modified:  2013-8-28
 *    Description:  兔子类，包括兔子推车，胜利，被炸等逻辑处理和动画展示
 *
 */
@@ -47,18 +42,13 @@ define(function (require, exports, module) {
     LOSE = 1,
     LEFT_DEFAULT_FRAME = 1,
     RIGHT_DEFAULT_FRAME = 4,
-    STATE_EMPTY = 0,
-    STATE_LITTLE = 1,
-    STATE_FULL = 2,
-    STATE_OVERFLOW = 3,
     FRAME_LENGTH = 6,
     FRMAE_INTERVAL = 4,
     MAX_SPEED = 8,
     LOSE_FRAME_LENGTH = 13,
     WIN_FRAME_LENGTH = 19,
     LEFT = 0,
-    RIGHT = 1,
-    IPAD_SENS = 1.8;
+    RIGHT = 1;
 
     var moving = STOP, //移动状态
     state = STATE_UNINIT, //游戏的状态

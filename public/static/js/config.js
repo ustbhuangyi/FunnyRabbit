@@ -1,6 +1,12 @@
 ﻿define(function (require, exports, module) {
 
     var DEFALUT_SETTINGS = {
+        game: {
+            life: 1,
+            time: 60,
+            rabbit: 0,
+            level: 1
+        },
         canvas: {
             width: 1000,
             height: 700
@@ -19,6 +25,10 @@
             nums: "http://s0.hao123img.com/res/img/zhongqiu-nums.png"
         },
         sound: {
+            bg: {
+                "ogg": "http://s1.hao123img.com/res/swf/zhongqiubg.ogg",
+                "mp3": "http://s1.hao123img.com/res/swf/zhongqiubg.mp3"
+            },
             cake: {
                 "ogg": "http://s0.hao123img.com/res/swf/sound/get.ogg",
                 "mp3": "http://s0.hao123img.com/res/swf/sound/get.mp3"
@@ -35,6 +45,13 @@
                 "ogg": "http://s0.hao123img.com/res/swf/sound/lose.ogg'",
                 "mp3": "http://s0.hao123img.com/res/swf/sound/lose.mp3'"
             }
+        },
+        rabbit:{
+            height: 80,
+            maxSpeed: 8,
+            left: 0,
+            right: 1,
+            stop: 2
         },
         cake: {
             small: 0,
@@ -61,7 +78,10 @@
         hao: {
             chance: 0.5,
             speed: 4,
-            type: 2
+            type: 2,
+            space: 24
         }
     }
+
+    module.exports = DEFALUT_SETTINGS;
 });

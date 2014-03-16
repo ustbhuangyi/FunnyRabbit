@@ -19,23 +19,9 @@ define(function (require, exports, module) {
     //audioPool = require("audioPool"),
     //require("player");
 
-
-
     var STATE_UNINITED = 0,
         STATE_START = 1,
-        STATE_END = 2,
-        BG_HEIGHT = 250,
-        CARROT_HEIGHT = 150,
-         MIN_WIDTH = 1000,
-    SCORE_TOP = 120,
-    SCORE_HEIGHT = 14,
-    HAO_CAKE_SIZE = 40,
-    LETTER_SPACE = 24,
-    HAO_CHANCE = 0.5,
-    COOKIE_KEY_GAME = 'zhongqiu_game',
-    SPEED = 120,
-    MUSIC_URL = 'http://s1.hao123img.com/res/swf/zhongqiubg.mp3';
-
+        STATE_END = 2;
 
     var totalTime, //游戏总时长
         spendTime, //游戏耗时
@@ -47,8 +33,6 @@ define(function (require, exports, module) {
         timeToken, //计时timer
         rabbitType, //兔子形态
         moonCakeToken, //月饼timer
-        viewportHeight,  //视口高度
-        music, //是否播放背景音乐
         player, //播放器
         cakeAudioPool, //接住月饼播放音效
         boomAudioPool, //接住炸弹播放音效
@@ -58,16 +42,16 @@ define(function (require, exports, module) {
         cake = config.cake;
 
     var scoreWidthMap = [42, 52, 52, 52], //分宽度
-    rabbitWidthMap = [88, 102], //兔子宽度
-    lifeMap = ["-217px -84px", "-37px -84px", "-217px 0", "-37px 0"], //生命条
-    scoreMap = ["-277px -244px", "-72px -244px", "-94px -244px", "-118px -244px", "-140px -244px", "-163px -244px", "-186px -244px", "-209px -244px", "-232px -244px", "-254px -244px"], //记分牌
-    timeMap = ["-332px -179px", "-6px -179px", "-41px -179px", "-78px -179px", "-113px -179px", "-150px -179px", "-187px -179px", "-224px -179px", "-259px -179px", "-295px -179px"], //倒计时
-    plusMap = ["-250px -292px", "-186px -292px", "-124px -292px", "-66px -292px"],  //加分
-    hao123Map = [
+        rabbitWidthMap = [88, 102], //兔子宽度
+        lifeMap = ["-217px -84px", "-37px -84px", "-217px 0", "-37px 0"], //生命条
+        scoreMap = ["-277px -244px", "-72px -244px", "-94px -244px", "-118px -244px", "-140px -244px", "-163px -244px", "-186px -244px", "-209px -244px", "-232px -244px", "-254px -244px"], //记分牌
+        timeMap = ["-332px -179px", "-6px -179px", "-41px -179px", "-78px -179px", "-113px -179px", "-150px -179px", "-187px -179px", "-224px -179px", "-259px -179px", "-295px -179px"], //倒计时
+        plusMap = ["-250px -292px", "-186px -292px", "-124px -292px", "-66px -292px"],  //加分
+        hao123Map = [
                   [
                    [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [1, 1], [2, 1], [3, 2], [3, 3], [3, 4]
-                  ],
-                  [ //h
+                  ], //h
+                  [
                    [4, 2], [4, 3], [5, 1], [5, 4], [6, 1], [6, 4], [7, 1], [7, 2], [7, 3], [7, 4]
                   ], //a
                   [
@@ -106,23 +90,14 @@ define(function (require, exports, module) {
         }, 1000);
     }
 
-    /*画场景*/
-    function drawCanvas() {
-        $canvas = $(canvasTpl);
-        $canvas.prependTo('body');
-        $container = $('#zhongqiu_gameContainer', $canvas);
-        $bg = $('#zhongqiu_bg', $canvas);
-        $life = $('#zhongqiu_life', $canvas);
-        $minute = $('.js_minute', $canvas);
-        $second = $('.js_second', $canvas);
-        $scores = $('#zhongqiu_score i', $canvas);
-        $exit = $('#zhongqiu_exit', $canvas);
-        onViewportChange();
+    /*画舞台*/
+    function drawStage() {
+
     }
 
     /*画兔子*/
     function drawRabbit() {
-        rabbit.create("#zhongqiu_gameContainer");
+
     }
 
     /*画生命值*/
@@ -174,18 +149,18 @@ define(function (require, exports, module) {
         }, 500);
     }
 
-    /*彩蛋，画hao123月饼*/
-    function drawHao123() {
-        var cake, letter, position;
-        for (var i = 0, count = hao123Map.length; i < count; i++) {
-            letter = hao123Map[i];
-            for (var j = 0, len = letter.length; j < len; j++) {
-                position = letter[j];
-                cake = new MoonCake();
-                cake.create({ type: NORMAL_CAKE, left: position[0] * HAO_CAKE_SIZE + LETTER_SPACE * i, top: position[1] * HAO_CAKE_SIZE, speed: 2 });
-            }
-        }
-    }
+    //    /*彩蛋，画hao123月饼*/
+    //    function drawHao123() {
+    //        var cake, letter, position;
+    //        for (var i = 0, count = hao123Map.length; i < count; i++) {
+    //            letter = hao123Map[i];
+    //            for (var j = 0, len = letter.length; j < len; j++) {
+    //                position = letter[j];
+    //                cake = new MoonCake();
+    //                cake.create({ type: NORMAL_CAKE, left: position[0] * HAO_CAKE_SIZE + LETTER_SPACE * i, top: position[1] * HAO_CAKE_SIZE, speed: 2 });
+    //            }
+    //        }
+    //    }
 
     /*开启音乐*/
     function playMusic() {
@@ -248,66 +223,6 @@ define(function (require, exports, module) {
         }
     }
 
-    /*得到积分tpl*/
-    function getScoreTpl(mooncake) {
-        var type = mooncake.type,
-        left = mooncake.left,
-        width = scoreWidthMap[type],
-        position = plusMap[type],
-        $newScoreTpl;
-        $newScoreTpl = format(scoreTpl, {
-            width: width,
-            height: SCORE_HEIGHT,
-            left: left,
-            position: position
-        });
-        return $newScoreTpl;
-    }
-
-    /*显示加分*/
-    function showScore(mooncake) {
-        if (mooncake.type != BOOM) {
-            var $score = $(getScoreTpl(mooncake));
-            $score.appendTo($container);
-            var top = viewportHeight - SCORE_TOP;
-            if (isIElow()) {
-                scoreAnimationForIe6($score, top, top - 50);
-            }
-            else {
-                $score.css({
-                    "top": top
-                }).animate({
-                    "top": '-=' + 50
-                }, 'slow', function () {
-                    $(this).fadeOut('slow', function () {
-                        if ($(this)) {
-                            $(this).remove();
-                        }
-                        $score = null;
-                    });
-                });
-            }
-        }
-    }
-
-    /*ie6加分动画*/
-    function scoreAnimationForIe6($score, from, to) {
-        var top = from;
-        function changeTop() {
-            top -= 5;
-            $score.css({ "top": top });
-            if (top == to) {
-                setTimeout(function () {
-                    $score && $score.remove();
-                    $score = null;
-                }, 1000);
-                return;
-            }
-            token = setTimeout(changeTop, 30);
-        }
-        changeTop();
-    }
-
     function noop() {
 
     }
@@ -327,20 +242,6 @@ define(function (require, exports, module) {
     /*修改游戏总时长*/
     function changeTotalTime(time) {
         totalTime = time;
-    }
-
-    /*改变背景音乐状态*/
-    function changeBgMusic(music) {
-        if (music == ON) {
-            playMusic();
-        } else {
-            stopMusic();
-        }
-    }
-
-    /*预加载图片*/
-    function preLoadImg() {
-        loadImage(loadImgList.slice(), noop);
     }
 
     /*事件绑定*/
@@ -368,7 +269,7 @@ define(function (require, exports, module) {
     }
 
     /*初始化游戏*/
-    function initGame() {
+    function initGame(canvas) {
         if (state >= STATE_START)
             return;
         state = STATE_START;
@@ -382,7 +283,6 @@ define(function (require, exports, module) {
         totalTime = gameConfig.getTotalTime();
         restLife = gameConfig.getTotalLife();
         rabbitType = gameConfig.getRabbitType();
-        music = gameConfig.getBgMusic();
         drawCanvas();
         drawLife(restLife);
         drawTime(totalTime - spendTime);
@@ -408,22 +308,11 @@ define(function (require, exports, module) {
     function exitGame() {
         state = STATE_UNINITED;
         unbindEvents();
-        events.un("viewport.deferchange", onViewportChange);
         events.un("game.exit", exitGame);
         stopMusic();
         clearTimeout(timeToken);
         clearTimeout(moonCakeToken);
         //player = null;
-        $canvas.remove();
-        $canvas = null;
-        $rabbit = null;
-        $container = null;
-        $bg = null;
-        $life = null;
-        $minute = null;
-        $second = null;
-        $scores = null;
-        $exit = null;
     }
 
     module.exports = {
