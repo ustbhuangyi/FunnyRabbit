@@ -113,6 +113,6 @@ define(function (require, exports, module) {
 
     MoonCake.prototype.constructor = MoonCake;
 
-    module.exports = MoonCake.factory();
+    module.exports = MoonCake;
 
 });

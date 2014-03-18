@@ -9,7 +9,11 @@
         },
         canvas: {
             width: 1000,
-            height: 700
+            height: 650
+        },
+        stage: {
+            width: 1000,
+            height: 250
         },
         image: {
             bg: "http://s0.hao123img.com/res/img/zhongqiu-bg.png",

@@ -2,10 +2,17 @@
 define(function (require) {
 
     var $ = require("jquery"),
-        game = require("game");
+        game = require("game"),
+        config = require("config");
 
     $(document).ready(function () {
-        game.initGame();
+        var canvas = document.getElementById("mainCanvas"),
+            context = canvas.getContext("2d");
+        canvas.height = config.get("canvas.height");
+        canvas.width = config.get("canvas.width");
+
+        if (context)
+            game.init(context);
     });
 
 });
