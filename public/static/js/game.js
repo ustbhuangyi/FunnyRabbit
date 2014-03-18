@@ -11,26 +11,35 @@
 define(function (require, exports, module) {
 
     var events = require("events"),
-        MoonCake = require("moonCake"),
         config = require("config"),
         imageloader = require("imageloader"),
+        MoonCake = require("moonCake"),
+        Rabbit = require("rabbit"),
+        AudioPool = require("audioPool"),
+        Timeline = require("timeline"),
         Stage = require("stage");
-    //rabbit = require("rabbit"),
-    //audioPool = require("audioPool"),
-    //require("player");
 
     var STATE_UNINITED = 0,
         STATE_START = 1,
         STATE_END = 2;
 
-    var totalTime, //游戏总时长
+    var canvasConf = config.get("canvas"),
+        cakeConf = config.get("cake"),
+        resultConf = config.get("result"),
+        gameConf = config.get("game"),
+        soundConf = config.get("sound"),
+        images = config.get("image");
+
+    var moonkCakes = [], //月饼实例
+        rabbit, //兔子实例
+        timeline, //计时器
+        totalTime, //游戏总时长
         spendTime, //游戏耗时
         score, //得分 
         level, //游戏难度
         restLife, //总生命值
         result, //游戏结果
         state, //游戏状态
-        timeToken, //计时timer
         rabbitType, //兔子形态
         moonCakeToken, //月饼timer
         player, //播放器
@@ -68,8 +77,94 @@ define(function (require, exports, module) {
                   ]//3
                 ];
 
+    function Game() {
+
+    }
+
+    Game.prototype = new Stage();
+
+    Game.prototype.init = function () {
+        if (this.state >= STATE_START)
+            return;
+        this.state = STATE_START;
+        this.spendTime = 0;
+        this.score = 0;
+        this.level = gameConf.level;
+        this.totalTime = gameConf.time;
+        this.rabbitType = gameConf.rabbitType;
+        this.restLife = gameConf.life;
+        this.moonkCakes = [];
+        this.rabbit = new Rabbit();
+        this.add(this.rabbit);
+        this.cakeAudioPool = new AudioPool(soundConf.cake);
+        this.boomAudioPool = new AudioPool(soundConf.boom);
+        this.winAudioPool = new AudioPool(soundConf.win);
+        this.loseAudioPool = new AudioPool(soundConf.lose);
+        this.preloadImag(function (success) {
+            if (success) {
+                this.drawStage();
+                this.drawLife();
+            } else {
+                throw new Error("fail to load images");
+            }
+        });
+
+        this.timeline = new Timeline();
+        this.timeline.onenterframe = function (time) {
+
+        };
+        drawStage();
+        drawLife(restLife);
+        drawTime(totalTime - spendTime);
+        drawRabbit();
+        drawMoonCake();
+        needDrawHao123 = Math.random() > HAO_CHANCE;
+        Timing();
+        preLoadImg();
+        if (music == ON) {
+            playMusic();
+        }
+        bindEvents();
+    };
+
+    Game.prototype.preloadImag = function (callback) {
+        imageloader(images, function (success) {
+            callback(success);
+        });
+    };
+
+    /*碰撞检测*/
+    Game.prototype.collisionDetect = function () {
+        var len = moonkCakes.length,
+            cake;
+        while (len--) {
+            cake = moonkCakes[len];
+            if (cake.y >= canvasConf.height - cake.height && cake.y <= canvasConf.height) {
+                if (cake.x + cake.width >= rabbit.left && cake.x <= rabbit.left + rabbit.width) {
+                    switch (cake.type) {
+                        case cakeConf.boom: //炸弹
+                            cake.boom();
+                            if (restLife--) {
+                                result = resultConf.lose;
+                                events.emit("game.over", result, spendTime, score);
+                                gameOver();
+                            }
+                            break;
+                        default:
+                            //播放背景音乐
+                            break;
+                    }
+                    moonkCakes.splice(len, 1);
+                    this.remove(cake);
+                }
+            }
+
+        }
+    }
+
     /*游戏计时*/
-    function Timing() {
+    Game.prototype.Timing = function () {
+
         timeToken = setTimeout(function () {
             var restTime = totalTime - ++spendTime;
             drawTime(restTime);
@@ -91,22 +186,25 @@ define(function (require, exports, module) {
     }
 
     /*画舞台*/
-    function drawStage() {
+    Game.prototype.drawStage = function () {
+        this.stage = new Sprite(function (context, time) {
 
-    }
+        });
+        this.add(this.stage);
+    };
 
     /*画兔子*/
-    function drawRabbit() {
+    Game.prototype.drawRabbit = function () {
 
-    }
+    };
 
     /*画生命值*/
-    function drawLife(life) {
+    Game.prototype.drawLife = function () {
         $life && $life.css({ "background-position": lifeMap[life] });
-    }
+    };
 
     /*画倒计时*/
-    function drawTime(time) {
+    Game.prototype.drawTime = function (time) {
         var minute = Math.floor(time / 10),
         second = Math.floor(time % 10);
         $minute && $minute.css({ "background-position": timeMap[minute] });
@@ -149,18 +247,6 @@ define(function (require, exports, module) {
         }, 500);
     }
 
-    //    /*彩蛋，画hao123月饼*/
-    //    function drawHao123() {
-    //        var cake, letter, position;
-    //        for (var i = 0, count = hao123Map.length; i < count; i++) {
-    //            letter = hao123Map[i];
-    //            for (var j = 0, len = letter.length; j < len; j++) {
-    //                position = letter[j];
-    //                cake = new MoonCake();
-    //                cake.create({ type: NORMAL_CAKE, left: position[0] * HAO_CAKE_SIZE + LETTER_SPACE * i, top: position[1] * HAO_CAKE_SIZE, speed: 2 });
-    //            }
-    //        }
-    //    }
 
     /*开启音乐*/
     function playMusic() {
@@ -210,13 +296,13 @@ define(function (require, exports, module) {
             drawScore(score);
             switch (true) {
                 case score >= SCORE_OVERFLOW:
-                    events.emit("game.scoreChange", SCORE_STATE_OVERFLOW);
+                    events.emit("game.basketChange", SCORE_STATE_OVERFLOW);
                     break;
                 case score >= SCORE_FULL:
-                    events.emit("game.scoreChange", SCORE_STATE_FULL);
+                    events.emit("game.basketChange", SCORE_STATE_FULL);
                     break;
                 case score >= SCORE_LITTLE:
-                    events.emit("game.scoreChange", SCORE_STATE_LITTLE);
+                    events.emit("game.basketChange", SCORE_STATE_LITTLE);
                     break;
             }
             showScore(moonCake);
@@ -270,31 +356,7 @@ define(function (require, exports, module) {
 
     /*初始化游戏*/
     function initGame(canvas) {
-        if (state >= STATE_START)
-            return;
-        state = STATE_START;
-        spendTime = 0;
-        score = 0;
-        level = 1;
-        cakeAudioPool = cakeAudioPool || new audioPool(cakeSoundUrl);
-        boomAudioPool = boomAudioPool || new audioPool(boomSoundUrl);
-        winAudioPool = winAudioPool || new audioPool(winSoundUrl);
-        loseAudioPool = loseAudioPool || new audioPool(loseSoundUrl);
-        totalTime = gameConfig.getTotalTime();
-        restLife = gameConfig.getTotalLife();
-        rabbitType = gameConfig.getRabbitType();
-        drawCanvas();
-        drawLife(restLife);
-        drawTime(totalTime - spendTime);
-        drawRabbit();
-        drawMoonCake();
-        needDrawHao123 = Math.random() > HAO_CHANCE;
-        Timing();
-        preLoadImg();
-        if (music == ON) {
-            playMusic();
-        }
-        bindEvents();
+
     }
 
     /*游戏结束*/
@@ -315,8 +377,9 @@ define(function (require, exports, module) {
         //player = null;
     }
 
-    module.exports = {
-        initGame: initGame,
-        state: state
-    }
+    var game = new Game();
+
+    module.exports = function () {
+        return game;
+    };
 });

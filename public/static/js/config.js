@@ -4,7 +4,7 @@
         game: {
             life: 1,
             time: 60,
-            rabbit: 0,
+            rabbitType: 0,
             level: 1
         },
         canvas: {
@@ -26,32 +26,40 @@
         },
         sound: {
             bg: {
-                "ogg": "http://s1.hao123img.com/res/swf/zhongqiubg.ogg",
-                "mp3": "http://s1.hao123img.com/res/swf/zhongqiubg.mp3"
+                ogg: "http://s1.hao123img.com/res/swf/zhongqiubg.ogg",
+                mp3: "http://s1.hao123img.com/res/swf/zhongqiubg.mp3"
             },
             cake: {
-                "ogg": "http://s0.hao123img.com/res/swf/sound/get.ogg",
-                "mp3": "http://s0.hao123img.com/res/swf/sound/get.mp3"
+                ogg: "http://s0.hao123img.com/res/swf/sound/get.ogg",
+                mp3: "http://s0.hao123img.com/res/swf/sound/get.mp3"
             },
             boom: {
-                "ogg": "http://s0.hao123img.com/res/swf/sound/boom.ogg",
-                "mp3": "http://s0.hao123img.com/res/swf/sound/boom.mp3"
+                ogg: "http://s0.hao123img.com/res/swf/sound/boom.ogg",
+                mp3: "http://s0.hao123img.com/res/swf/sound/boom.mp3"
             },
             win: {
-                "ogg": "http://s0.hao123img.com/res/swf/sound/win.ogg",
-                "mp3": "http://s0.hao123img.com/res/swf/sound/win.mp3"
+                ogg: "http://s0.hao123img.com/res/swf/sound/win.ogg",
+                mp3: "http://s0.hao123img.com/res/swf/sound/win.mp3"
             },
             lose: {
-                "ogg": "http://s0.hao123img.com/res/swf/sound/lose.ogg'",
-                "mp3": "http://s0.hao123img.com/res/swf/sound/lose.mp3'"
+                ogg: "http://s0.hao123img.com/res/swf/sound/lose.ogg'",
+                mp3: "http://s0.hao123img.com/res/swf/sound/lose.mp3'"
             }
         },
-        rabbit:{
+        rabbit: {
             height: 80,
+            widths: [88, 102],
             maxSpeed: 8,
             left: 0,
             right: 1,
-            stop: 2
+            stop: 2,
+            type: 0,
+            leftDefaultFrame: 1,
+            rightDefaultFrame: 4,
+            frameLength: 6,
+            frameInterval: 4,
+            loseFrameLength: 13,
+            winFrameLength: 19
         },
         cake: {
             small: 0,
@@ -83,5 +91,52 @@
         }
     }
 
-    module.exports = DEFALUT_SETTINGS;
+    var config = {
+        init: function () {
+            this.data = DEFALUT_SETTINGS;
+            return this;
+        },
+        get: function (path, def) {
+            var result = this.data || {};
+            (path || '').split('.').forEach(function (key) {
+                if (key && typeof result !== 'undefined') {
+                    result = result[key];
+                }
+            });
+            if (typeof result !== 'undefined') {
+                return result;
+            } else {
+                return def;
+            }
+        },
+        set: function (path, value) {
+            var paths, last, data;
+            if (typeof value === 'undefined') {
+                this.data = path;
+            }
+            else {
+                path = String(path || '').trim();
+                if (path) {
+                    paths = path.split('.');
+                    last = paths.pop();
+                    data = this.data || {};
+                    paths.ForEach(function (key) {
+                        var type = data[key];
+                        if (typeof type === 'object') {
+                            data = data[key];
+                        } else if (typeof type === "undefiend") {
+                            data = data[key] = {};
+                        } else {
+                            throw new Error('forbidden to set property[' + key + '] of [' + type + '] data');
+                        }
+                    });
+                    data[last] = value;
+                }
+            }
+            return this;
+        }
+
+    };
+
+    module.exports = config.init();
 });

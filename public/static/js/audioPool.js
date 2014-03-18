@@ -12,9 +12,11 @@ define(function (require, exports, module) {
     }
 
     function AudioPool(src) {
+        if (!src)
+            return;
         this.pool = [];
         if (canOgg) {
-            this.src = src["ogg"];
+            this.src = src["ogg"] || src["mp3"];
         } else {
             this.src = src["mp3"];
         }

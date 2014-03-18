@@ -5,54 +5,23 @@
 */
 define(function (require, exports, module) {
 
-    var events = require("pageEvents"),
-    $ = require("jquery"),
-    gameConfig = require("gameConfig"),
-    Timeline = require("timeline"),
-    gameover = require("gameover"),
-    browser = require("browser"),
-    animation = require("animation"),
-    format = require("format");
-
-    var $rabbit, //兔子
-    $rabbitLose, //被炸兔子
-    $rabbitWin, //胜率兔子
-    $rabbitTip, //兔子操作提示
-    container = "#zhongqiu_gameContainer",
-    rabbitTpl = '<div id="zhongqiu_rabbit" class="#{rabbit}" style="width:#{width}px;height:#{height}px;left:#{left}px;background-position:#{position};"></div>',
-    rabbitLoseTpl = '<div class="rabbitlose" style="left:#{left}px;top:#{top}px;background-position:#{position};"></div>',
-    rabbitWinTpl = '<div class="rabbitwin" style="left:#{left}px;top:#{top}px;background-position:#{position};"></div>',
-    rabbitTipTpl = '<div class="rabbittip" style="left:#{left}px;top:#{top}px;"></div>';
+    var events = require("events"),
+        Sprite = require("sprite"),
+        $ = require("jquery"),
+        config = require("config");
 
     var ARROW_LEFT = 37,
-    ARROW_RIGHT = 39,
-    REFRESH_RATE = 17,
-    CANVAS_WIDTH = 1000,
-    EXTRA_HEIGHT = 85,
-    EXTRA_WIDTH = 0,
-    RABBIT_HEIGHT = 80,
-    TIP_HEIGHT = 120,
-    MOVING_LEFT = 0,
-    MOVING_RIGHT = 1,
-    STOP = 2,
-    STATE_UNINIT = 0,
-    STATE_START = 1,
-    STATE_END = 2,
-    WIN = 0,
-    LOSE = 1,
-    LEFT_DEFAULT_FRAME = 1,
-    RIGHT_DEFAULT_FRAME = 4,
-    FRAME_LENGTH = 6,
-    FRMAE_INTERVAL = 4,
-    MAX_SPEED = 8,
-    LOSE_FRAME_LENGTH = 13,
-    WIN_FRAME_LENGTH = 19,
-    LEFT = 0,
-    RIGHT = 1;
+        ARROW_RIGHT = 39,
+        STATE_UNINIT = 0,
+        STATE_START = 1,
+        STATE_END = 2,
+        REFRESH_RATE = 17;
 
-    var moving = STOP, //移动状态
-    state = STATE_UNINIT, //游戏的状态
-    speed = 0, //兔子移动速度
+    var rabbitConf = config.get("rabbit"),
+        canvasConf = config.get("canvas"),
+        resultConf = config.get("result"),
+        basketConf = config.get("basket"),
+        state = STATE_UNINIT, //游戏的状态
     minLeft = EXTRA_WIDTH, //兔子最左端位置
     maxLeft, //兔子最右端位置
     left, //兔子x坐标
@@ -61,10 +30,7 @@ define(function (require, exports, module) {
     rightFrame = RIGHT_DEFAULT_FRAME, //兔子右跑的帧
     leftCount = 0, //左移计数
     rightCount = 0, //右移计数
-    basketState = STATE_EMPTY, //篮子的状态
-    rabbitType, //兔子形态
     direction = LEFT, //兔子方向
-    isIpad = false, //是否ipad设备
     loseAnimation = null, //失败动画
     winAnimation = null, //胜利动画
     timeline = null; //控制兔子跑动
@@ -109,91 +75,108 @@ define(function (require, exports, module) {
     /*兔子胜利动画*/
     rabbitWinMap = ["0 0", "-198 0", "-401 0", "-609 0", "-816 0", "0 -96", "-208 -97", "-415 -97", "-623 -97", "-831 -97", "0 -203", "-207 -203", "-415 -203", "-623 -203", "-831 -203", "0 -307", "-206 -307", "-414 -307", "-623 -307"];
 
-    /*创建一只兔子*/
-    function create() {
-        rabbitType = gameConfig.getRabbitType();
-        var rabbit = rabbitMap[rabbitType],
-        rabbitWidth = widthMap[rabbitType],
-        position = defaultPostion[rabbitType],
-        tpl;
-        state = STATE_START;
 
-        maxLeft = CANVAS_WIDTH - rabbitWidth - EXTRA_WIDTH;
-        left = maxLeft / 2;
-
-        tpl = format(rabbitTpl, {
-            rabbit: rabbit,
-            width: rabbitWidth,
-            height: RABBIT_HEIGHT,
-            left: left,
-            position: position
-        });
-        $rabbit = $(tpl);
-        adjustRabbit();
-        $rabbit.appendTo($(container));
-
-        timeline = new Timeline();
-        timeline.onenterframe = rabbitRun;
-        timeline.start();
-
-        isIpad = browser.isIpad();
-        bindEvent();
+    function Rabbit(callback) {
+        this.create();
     }
 
-    /*调整兔子位置*/
-    function adjustRabbit(args) {
-        var viewport = args || events.getViewport(),
-        height = viewport.height;
-        top = height - EXTRA_HEIGHT;
-        $rabbit && $rabbit.css({ "top": top });
-        $rabbitLose && $rabbitLose.css({ "top": top });
-        $rabbitWin && $rabbitWin.css({ "top": top });
-        $rabbitTip && $rabbitTip.css({ "top": top - TIP_HEIGHT });
-    }
+    Rabbit.prototype = new Sprite(); //继承Sprite
 
-    /*游戏结束*/
-    function gameOver(result, spendTime, score) {
-        $rabbit && $rabbit.remove();
-        if (result == WIN) {
-            rabbitWin(result, score);
+    Rabbit.prototype.create = function () {
+        this.type = rabbitConf.type;
+        this.speed = 0;
+        this.moving = rabbitConf.stop;
+        this.width = rabbitConf.widths[this.type];
+        this.height = rabbitConf.heigth;
+        this.minLeft = 0;
+        this.maxLeft = canvasConf.width - this.width;
+        this.basketState = basketConf.empty;
+        this.x = this.maxLeft / 2;
+        this.y = canvasConf.height - this.height - 20;
+        this.leftFrame = rabbitConf.leftDefaultFrame;
+        this.rightFrame = rabbitConf.rightDefaultFrame;
+        this.leftCount = 0;
+        this.rightCount = 0;
+        this.direction = rabbitConf.left;
+
+        this.bindEvent();
+    };
+
+    Rabbit.prototype.paint = function (context, time) {
+        switch (this.moving) {
+            case rabbitConf.left:
+                if (this.speed < rabbitConf.maxSpeed) {
+                    this.speed++;
+                }
+                if (this.left > this.minLeft) { 
+                    this.left -= sp
+                }
+                break;
         }
-        else {
-            rabbitLose(result, score);
+    };
+
+    Rabbit.prototype.onKeyDown = function (e) {
+        switch (e.which) {
+            case ARROW_LEFT: //left
+                this.moving = rabbitConf.left;
+                break;
+            case ARROW_RIGHT: //right
+                this.moving = rabbitConf.right;
+                break;
         }
-        state = STATE_END;
-        unbindEvent();
-    }
+    };
 
-    /*兔子被雷炸动画*/
-    function rabbitLose(result, score) {
-        $rabbitLose = $(format(rabbitLoseTpl, {
-            left: left,
-            top: top
-        }));
-        $rabbitLose.appendTo($(container));
-        loseAnimation = animation().changePosition($rabbitLose, rabbitLoseMap).wait(function () {
-            gameover.show(result, score);
+    Rabbit.prototype.onKeyUp = function (e) {
+        switch (e.which) {
+            case ARROW_LEFT: //left
+                if (this.moving == rabbitConf.left) {
+                    this.direction = rabbitConf.left;
+                    this.moving = rabbitConf.stop;
+                    this.leftFarme = rabbitConf.leftDefaultFrame;
+                    this.leftCount = 0;
+                    this.speed = 0;
+                }
+                break;
+            case ARROW_RIGHT: //right
+                if (this.moving == rabbitConf.right) {
+                    this.direction = rabbitConf.right;
+                    this.moving = rabbitConf.stop;
+                    this.rightFrame = rabbitConf.rightDefaultFrame;
+                    this.rightCount = 0;
+                    this.speed = 0;
+                }
+                break;
+        }
+    };
+
+
+    Rabbit.prototype.bindEvent = function () {
+        var me = this;
+
+        $(document).keydown(function (e) {
+            me.onKeyDown(e);
         });
-        loseAnimation.start(200);
-    }
 
-    /*兔子胜利动画*/
-    function rabbitWin(result, score) {
-        $rabbitWin = $(format(rabbitWinTpl, {
-            left: left,
-            top: top
-        }));
-        $rabbitWin.appendTo($(container));
-        winAnimation = animation().changePosition($rabbitWin, rabbitWinMap).wait(function () {
-            gameover.show(result, score);
+        $(document).keyup(function (e) {
+            me.onKeyUp(e);
         });
-        winAnimation.start(200);
-    }
 
-    /*得到兔子dom元素*/
-    function getInstance() {
-        return $rabbit;
-    }
+        events.on("game.basketChange", function (state) {
+            this.basketState = state;
+        });
+
+        events.on("game.rabbitChange", function (type) {
+            this.type = type;
+        });
+
+        events.on("game.over", gameOver);
+        events.on("game.exit", dispose);
+
+        if (isIpad && window.DeviceMotionEvent) {
+            window.addEventListener('devicemotion', deviceMotionHandler, false);
+        }
+    };
+
 
     /*控制兔子左右跑的动画*/
     function rabbitRun(time) {
@@ -305,6 +288,52 @@ define(function (require, exports, module) {
         }
     }
 
+
+    /*游戏结束*/
+    function gameOver(result, spendTime, score) {
+        $rabbit && $rabbit.remove();
+        if (result == WIN) {
+            rabbitWin(result, score);
+        }
+        else {
+            rabbitLose(result, score);
+        }
+        state = STATE_END;
+        unbindEvent();
+    }
+
+    /*兔子被雷炸动画*/
+    function rabbitLose(result, score) {
+        $rabbitLose = $(format(rabbitLoseTpl, {
+            left: left,
+            top: top
+        }));
+        $rabbitLose.appendTo($(container));
+        loseAnimation = animation().changePosition($rabbitLose, rabbitLoseMap).wait(function () {
+            gameover.show(result, score);
+        });
+        loseAnimation.start(200);
+    }
+
+    /*兔子胜利动画*/
+    function rabbitWin(result, score) {
+        $rabbitWin = $(format(rabbitWinTpl, {
+            left: left,
+            top: top
+        }));
+        $rabbitWin.appendTo($(container));
+        winAnimation = animation().changePosition($rabbitWin, rabbitWinMap).wait(function () {
+            gameover.show(result, score);
+        });
+        winAnimation.start(200);
+    }
+
+    /*得到兔子dom元素*/
+    function getInstance() {
+        return $rabbit;
+    }
+
+
     /*改变篮筐状态*/
     function changeBasketState(state) {
         basketState = state;
@@ -322,58 +351,9 @@ define(function (require, exports, module) {
             $rabbit.css({ "background-position": runningMap[type][direction][basketState][frame] });
         }
     }
-
-    /*forIpad*/
-    function deviceMotionHandler(eventData) {
-        var gravity = eventData.accelerationIncludingGravity,
-        x = gravity.x,
-        y = gravity.y;
-        switch (window.orientation) {
-            case 0:  //参考x轴
-                if (x <= 0) {
-                    moving = MOVING_LEFT;
-                    speed = Math.min(-x * IPAD_SENS, MAX_SPEED);
-                } else {
-                    moving = MOVING_RIGHT;
-                    speed = Math.min(x * IPAD_SENS, MAX_SPEED);
-                }
-
-                break;
-            case -90: //参考y轴
-                if (y <= 0) {
-                    moving = MOVING_LEFT;
-                    speed = Math.min(-y * IPAD_SENS, MAX_SPEED);
-                } else {
-                    moving = MOVING_RIGHT;
-                    speed = Math.min(y * IPAD_SENS, MAX_SPEED);
-                }
-                break;
-            case 90: //参考y轴
-                if (y <= 0) {
-                    moving = MOVING_RIGHT;
-                    speed = Math.min(-y * IPAD_SENS, MAX_SPEED);
-                } else {
-                    moving = MOVING_LEFT;
-                    speed = Math.min(y * 2, MAX_SPEED);
-                }
-                break;
-        }
-    }
-
     /*绑定事件*/
     function bindEvent() {
-        $(document).keydown(onKeyDown);
-        $(document).keyup(onKeyUp);
 
-        events.on("viewport.deferchange", adjustRabbit);
-        events.on("game.scoreChange", changeBasketState);
-        events.on("game.over", gameOver);
-        events.on("game.exit", dispose);
-        events.on("gameConfig.rabbitTypeChange", changeRabbitType);
-
-        if (isIpad && window.DeviceMotionEvent) {
-            window.addEventListener('devicemotion', deviceMotionHandler, false);
-        }
     }
 
     /*清除事件绑定*/

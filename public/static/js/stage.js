@@ -13,7 +13,6 @@ define(function (require, exports, module) {
 
         if (context)
             me.setContext(context, width, height);
-
     }
 
     Stage.prototype.start = function (interval) {

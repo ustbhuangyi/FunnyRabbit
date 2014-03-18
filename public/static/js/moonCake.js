@@ -21,10 +21,10 @@ define(function (require, exports, module) {
         boomMap = ["0 0", "138 0", "291 0", "436 0"]; //炸弹坐标
 
     var images = {
-        icon: config.image.icon
+        icon: config.get("image.icon")
     },
-    canvasHeight = config.canvas.width,
-    canvasWidth = config.canvas.height;
+    canvasHeight = config.get("canvas.width");
+    canvasWidth = config.get("canvas.height");
 
     var imgloaded = null;
     imageLoader(images, function (sucess) {
@@ -39,11 +39,11 @@ define(function (require, exports, module) {
     function MoonCake(type, callback) {
         var me = this;
         Sprite.call(this, callback);
-        if (this.create(type)) {
+        if (this.create(type) && !callback) {
             this.paint = function (context, time) {
-                me.y = me.speed * time;
-                me.check();
-                context.drawImage(me.img, me.sx, me.sy, me.width, me.height, me.x, me.y, me.width, me.height);
+               // me.y = me.speed * time;
+                //me.check();
+                context.drawImage(me.img, me.sx, me.sy, me.width, me.height, 0, 0, me.width, me.height);
             };
 
         }
@@ -76,6 +76,7 @@ define(function (require, exports, module) {
         this.sy = sPostion[1];
         this.speed = speed || speedMap[Math.floor(Math.random() * 4)];
         this.state = STATE_START;
+        this.bindEvent();
         return true;
     };
 
