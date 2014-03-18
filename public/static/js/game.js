@@ -188,7 +188,7 @@ define(function (require, exports, module) {
     /*画舞台*/
     Game.prototype.drawStage = function () {
         this.stage = new Sprite(function (context, time) {
-
+            
         });
         this.add(this.stage);
     };
