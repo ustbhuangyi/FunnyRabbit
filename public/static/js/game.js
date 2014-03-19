@@ -221,17 +221,36 @@ define(function (require, exports, module) {
             height = 14,
             plus;
 
-        plus = new Sprite(function (context, time) {
-            var positions = plusMap[type].split(' ');
-            context.drawImage(icon, positions[0], positions[1], width, height, 0, 0, width, height);
-        });
+        plus = new Sprite(doDraw)
+        plus.lastTick = this.lastTick;
         plus.x = x;
-        plus.y = y ||156;
-        this.pluss.push(plus);
+        plus.alpha = 1;
+        plus.y = y || 156;
         this.stage.add(plus);
 
         return this;
+
+        function doDraw(context, time) {
+            var that = this,
+                positions = plusMap[type].split(' '),
+                ratio = (time - this.lastTick) / defaultInterval;
+            this.lastTick = time;
+            this.y = Math.max(80, this.y - (3 * ratio) | 0);
+            if (this.y == 80) {
+                this.alpha = Math.max(0, (this.alpha - 0.03 * ratio));
+                context.globalAlpha = this.alpha;
+                if (this.alpha == 0) {
+                    setTimeout(function () {
+                        that.parent.remove(that);
+                    }, 0);
+                }
+            }
+            context.drawImage(icon, positions[0], positions[1], width, height, 0, 0, width, height);
+            context.globalAlpha = 1;
+        }
     };
+
+
 
     /*画兔子*/
     Game.prototype.drawRabbit = function () {
@@ -302,7 +321,7 @@ define(function (require, exports, module) {
         }
         //随机创建月饼
         if (++this.gameFrame % 30 == 0) {
-            drawMooncakeRan();
+            drawMooncakeRan.call(this);
         }
         //处理月饼下落逻辑
         while (cakeLen--) {
@@ -310,55 +329,47 @@ define(function (require, exports, module) {
             maxHeight = canvasConf.height - cake.height;
             cake.y = Math.min(maxHeight, cake.y + (cake.speed * ratio) | 0);
             if (cake.y == maxHeight) {
-                this.remove(cake);
-                this.moonCakes.splice(cakeLen, 1);
+                cake.alpha = Math.max(0, cake.alpha - 0.02 * ratio);
+                if (cake.alpha == 0) {
+                    this.remove(cake);
+                    this.moonCakes.splice(cakeLen, 1);
+                }
             } else {
                 this.collisionDetect(cake, cakeLen);
             }
         }
-        //处理加分逻辑
-        while (plusLen--) {
-            plus = this.pluss[plusLen];
-            plus.y = Math.max(80, plus.y - (3 * ratio) | 0);
-            if (plus.y == 80) {
-                setTimeout(function () {
-                    me.stage.remove(plus);
-                }, 500);
-                this.pluss.splice(plusLen, 1);
-            }
-        }
-
-        function drawMooncakeRan() {
-            var ran, boomRate, superRate, smallRate,
-                normalRate, bigRate, type, speed;
-            ran = Math.random();
-            boomRate = difficultyMap[me.difficulty] * me.level;
-            superRate = 1 - boomRate;
-            smallRate = (superRate) / 4;
-            normalRate = smallRate * 2;
-            bigRate = smallRate * 3;
-            switch (true) {
-                case ran >= superRate:
-                    type = cakeConf.boom;
-                    break;
-                case ran >= bigRate:
-                    type = cakeConf.huge;
-                    break;
-                case ran >= normalRate:
-                    type = cakeConf.big;
-                    break;
-                case ran >= smallRate:
-                    type = cakeConf.normal;
-                    break;
-                default:
-                    type = cakeConf.small;
-                    break;
-            }
-            speed = speedMap[(Math.random() * 4) | 0];
-            me.drawMoonCake(type, images.icon, speed);
-        }
 
     };
+
+    function drawMooncakeRan() {
+        var ran, boomRate, superRate, smallRate,
+                normalRate, bigRate, type, speed;
+        ran = Math.random();
+        boomRate = difficultyMap[this.difficulty] * this.level;
+        superRate = 1 - boomRate;
+        smallRate = (superRate) / 4;
+        normalRate = smallRate * 2;
+        bigRate = smallRate * 3;
+        switch (true) {
+            case ran >= superRate:
+                type = cakeConf.boom;
+                break;
+            case ran >= bigRate:
+                type = cakeConf.huge;
+                break;
+            case ran >= normalRate:
+                type = cakeConf.big;
+                break;
+            case ran >= smallRate:
+                type = cakeConf.normal;
+                break;
+            default:
+                type = cakeConf.small;
+                break;
+        }
+        speed = speedMap[(Math.random() * 4) | 0];
+        this.drawMoonCake(type, images.icon, speed);
+    }
 
     /*碰撞检测*/
     Game.prototype.collisionDetect = function (cake, len) {
@@ -381,10 +392,13 @@ define(function (require, exports, module) {
                         switch (true) {
                             case this.score >= scoreConf.overflow:
                                 rabbit.basketState = basketConf.overflow;
+                                break;
                             case this.score >= scoreConf.full:
                                 rabbit.basketState = basketConf.full;
-                            case this.score >= scoreConf.litte:
+                                break;
+                            case this.score >= scoreConf.little:
                                 rabbit.basketState = basketConf.little;
+                                break;
                         }
                         this.drawPlus(cake.type, cake.x);
                         break;

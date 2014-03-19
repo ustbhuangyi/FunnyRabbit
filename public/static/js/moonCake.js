@@ -33,6 +33,7 @@ define(function (require, exports, module) {
         sPostion = positionMap[type].split(' ');
         this.sx = sPostion[0];
         this.sy = sPostion[1];
+        this.alpha = 1;
         this.speed = args.speed;
         this.bindEvent();
         return true;
@@ -41,7 +42,13 @@ define(function (require, exports, module) {
     MoonCake.prototype.paint = function (context, time) {
         var width = this.width,
             height = this.height;
+        if (this.alpha < 1) {
+            context.globalAlpha = this.alpha;
+        }
         context.drawImage(this.image, this.sx, this.sy, width, height, 0, 0, width, height);
+        if (this.alpha < 1) {
+            context.globalAlpha = 1;
+        }
     };
 
     MoonCake.prototype.bindEvent = function () {
