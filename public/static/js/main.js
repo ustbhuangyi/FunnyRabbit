@@ -3,6 +3,7 @@ define(function (require) {
 
     var $ = require("jquery"),
         game = require("game"),
+        util = require("util"),
         config = require("config");
 
     $(document).ready(function () {
@@ -14,5 +15,6 @@ define(function (require) {
         if (context)
             game.init(context);
     });
+
 
 });

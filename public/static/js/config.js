@@ -1,11 +1,16 @@
 ﻿define(function (require, exports, module) {
 
     var DEFALUT_SETTINGS = {
+        state: {
+            uninit: 0,
+            start: 1,
+            end: 2
+        },
         game: {
             life: 1,
             time: 60,
             rabbitType: 0,
-            level: 1
+            difficulty: 0
         },
         canvas: {
             width: 1000,
@@ -53,6 +58,8 @@
         rabbit: {
             height: 80,
             widths: [88, 102],
+            small: 0,
+            big: 1,
             maxSpeed: 8,
             left: 0,
             right: 1,

@@ -51,6 +51,7 @@ define(function (require, exports, module) {
     Sprite.prototype.add = function (child, name) {
         this.children.push(child);
         name && (this[name] = child);
+        child.parent = this;
         return this;
     };
 
@@ -61,6 +62,7 @@ define(function (require, exports, module) {
         while (i--) {
             if (child === children[i]) {
                 children.splice(i, 1);
+                child.parent = null;
             }
         }
 

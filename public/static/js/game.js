@@ -13,16 +13,12 @@ define(function (require, exports, module) {
     var events = require("events"),
         config = require("config"),
         imageloader = require("imageloader"),
-    //MoonCake = require("moonCake"),
-    //Rabbit = require("rabbit"),
+        MoonCake = require("moonCake"),
+        Rabbit = require("rabbit"),
         Sprite = require("sprite"),
         AudioPool = require("audioPool"),
         Timeline = require("timeline"),
         Stage = require("stage");
-
-    var STATE_UNINITED = 0,
-        STATE_START = 1,
-        STATE_END = 2;
 
     var canvasConf = config.get("canvas"),
         stageConf = config.get("stage"),
@@ -30,14 +26,20 @@ define(function (require, exports, module) {
         resultConf = config.get("result"),
         gameConf = config.get("game"),
         soundConf = config.get("sound"),
+        rabbitConf = config.get("rabbit"),
+        stateConf = config.get("state"),
+        cakeConf = config.get("cake"),
+        scoreConf = config.get("score"),
+        basketConf = config.get("basket"),
         images = config.get("image");
 
     var scoreWidthMap = [42, 52, 52, 52], //分宽度
-        rabbitWidthMap = [88, 102], //兔子宽度
-        lifeMap = ["-217px -84px", "-37px -84px", "-217px 0", "-37px 0"], //生命条
-        scoreMap = ["-277px -244px", "-72px -244px", "-94px -244px", "-118px -244px", "-140px -244px", "-163px -244px", "-186px -244px", "-209px -244px", "-232px -244px", "-254px -244px"], //记分牌
+        difficultyMap = [0.05, 0.1], //炸弹概率，游戏难度而定
+        speedMap = [2, 3, 4, 5], //月饼掉落速度
+        lifeMap = ["217 84", "37 84", "217 0", "37 0"], //生命条
+        scoreMap = ["277 244", "72 244", "94 244", "118 244", "140 244", "163 244", "186 244", "209 244", "232 244", "254 244"], //记分牌
         timeMap = ["332 179", "6 179", "41 179", "78 179", "113 179", "150 179", "187 179", "224 179", "259 179", "295 179"], //倒计时
-        plusMap = ["-250px -292px", "-186px -292px", "-124px -292px", "-66px -292px"],  //加分
+        plusMap = ["250 292", "186 292", "124 292", "66 292"],  //加分
         hao123Map = [
                   [
                    [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [1, 1], [2, 1], [3, 2], [3, 3], [3, 4]
@@ -57,45 +59,61 @@ define(function (require, exports, module) {
                   [
                     [18, 0], [18, 4], [19, 0], [19, 2], [19, 4], [20, 0], [20, 2], [20, 4], [21, 1], [21, 3]
                   ]//3
-                ];
+                ],
+         keyCodeMap = {
+             Left: 37,
+             Right: 39
+         },
+         defaultInterval = 1000 / 60;
 
-    function Game() {}
+    function Game() { }
 
     Game.prototype = new Stage();
 
     Game.prototype.init = function (context) {
         var me = this;
-        if (this.state >= STATE_START)
+        if (this.state >= stateConf.start)
             return;
-        this.state = STATE_START;
+        this.state = stateConf.start;
         Stage.call(this, context, canvasConf.width, canvasConf.height);
-        this.spendTime = 0;
-        this.score = 0;
-        this.level = gameConf.level;
-        this.totalTime = gameConf.time;
-        this.rabbitType = gameConf.rabbitType;
-        this.restLife = gameConf.life;
-        this.moonkCakes = [];
-        // this.rabbit = new Rabbit();
-        //this.add(this.rabbit);
-        this.cakeAudioPool = new AudioPool(soundConf.cake);
-        this.boomAudioPool = new AudioPool(soundConf.boom);
-        this.winAudioPool = new AudioPool(soundConf.win);
-        this.loseAudioPool = new AudioPool(soundConf.lose);
         this.preloadImage(function (success) {
             if (success) {
-                me.drawStage().drawTime().start();
+                me.spendTime = 0;
+                me.score = 0;
+                me.level = 1;
+                me.gameFrame = 0;
+                me.difficulty = gameConf.difficulty;
+                me.totalTime = gameConf.time;
+                me.rabbitType = gameConf.rabbitType;
+                me.restLife = gameConf.life;
+                me.moonCakes = [];
+                me.pluss = [];
+                // this.rabbit = new Rabbit();
+                //this.add(this.rabbit);
+                me.cakeAudioPool = new AudioPool(soundConf.cake);
+                me.boomAudioPool = new AudioPool(soundConf.boom);
+                me.winAudioPool = new AudioPool(soundConf.win);
+                me.loseAudioPool = new AudioPool(soundConf.lose);
+                me.drawStage().drawTime().drawLife().drawScore().drawRabbit().start();
                 //this.drawLife();
+                me.lastTick = 0;
+                me.tick = new Timeline(); //计时器
+                me.tick.onenterframe = function (time) {
+                    me.Ticking(time);
+                };
+                me.tick.start();
+                me.bindEvent();
             } else {
                 throw new Error("fail to load images");
             }
         });
+    };
 
-        this.tick = new Timeline(); //计时器
-        this.tick.onenterframe = function (time) {
-            me.time = time;
-            me.Timing(time);
-        };
+    /*图片预加载*/
+    Game.prototype.preloadImage = function (callback) {
+        imageloader(images, function (success) {
+            callback(success);
+        });
     };
 
     /*画舞台*/
@@ -119,22 +137,23 @@ define(function (require, exports, module) {
         var me = this,
             icon = images.icon.img,
             width = 25,
-            height = 35;
-        this.decade = new Sprite(function (context, time) {
-            var num = Math.max(0, Math.floor((me.totalTime - Math.floor(time / 1000)) / 10));
-            draw(context, num);
-        });
-        this.decade.x = 20,
-        this.decade.y = 94;
-        this.stage.add(this.decade);
+            height = 35,
+            timeLen = 2,
+            time;
 
-        this.single = new Sprite(function (context, time) {
-            var num = Math.max(0, Math.floor((me.totalTime - Math.floor(time / 1000)) % 10));
-            draw(context, num);
-        });
-        this.single.x = 45,
-        this.single.y = 94;
-        this.stage.add(this.single);
+        for (var i = 0; i < timeLen; i++) {
+            (function (index) {
+                time = new Sprite(function (context, time) {
+                    var time = Math.max(0, Math.floor(me.totalTime - Math.floor(me.spendTime / 1000))),
+                        base = Math.pow(10, timeLen - index),
+                        num = ((time % base) * 10 / base) | 0;
+                    draw(context, num);
+                });
+                time.x = 20 + index * width;
+                time.y = 94;
+                me.stage.add(time);
+            })(i);
+        }
 
         function draw(context, num) {
             var positions = timeMap[num].split(' ');
@@ -144,97 +163,293 @@ define(function (require, exports, module) {
         return this;
     };
 
-    Game.prototype.preloadImage = function (callback) {
-        imageloader(images, function (success) {
-            callback(success);
+    /*画生命条*/
+    Game.prototype.drawLife = function () {
+        var me = this,
+            icon = images.icon.img,
+            width = 125,
+            height = 70,
+            life;
+
+        life = new Sprite(function (context, time) {
+            var positions = lifeMap[me.restLife].split(' ');
+            context.drawImage(icon, positions[0], positions[1], width, height, 0, 0, width, height);
         });
+        life.x = 50;
+        life.y = 180;
+
+        this.stage.add(life);
+
+        return this;
+    };
+
+    /*画分数*/
+    Game.prototype.drawScore = function () {
+        var me = this,
+            icon = images.icon.img,
+            width = 17,
+            height = 25,
+            scoreLen = 7,
+            score;
+
+        for (var i = 0; i < scoreLen; i++) {
+            (function (index) {
+                score = new Sprite(function (context, time) {
+                    var base = Math.pow(10, scoreLen - index),
+                        num = ((me.score % base) * 10 / base) | 0;
+                    draw(context, num);
+                });
+                score.x = 829 + width * index;
+                score.y = 28;
+                me.stage.add(score);
+            })(i);
+        }
+
+        function draw(context, num) {
+            var positions = scoreMap[num].split(' ');
+            context.drawImage(icon, positions[0], positions[1], width, height, 0, 0, width, height);
+        }
+
+        return this;
+    };
+
+    /*画加分*/
+    Game.prototype.drawPlus = function (type, x, y) {
+        var me = this,
+            icon = images.icon.img,
+            width = scoreWidthMap[type],
+            height = 14,
+            plus;
+
+        plus = new Sprite(function (context, time) {
+            var positions = plusMap[type].split(' ');
+            context.drawImage(icon, positions[0], positions[1], width, height, 0, 0, width, height);
+        });
+        plus.x = x;
+        plus.y = y ||156;
+        this.pluss.push(plus);
+        this.stage.add(plus);
+
+        return this;
+    };
+
+    /*画兔子*/
+    Game.prototype.drawRabbit = function () {
+        this.rabbit = Rabbit(images);
+        this.rabbit.x = Math.floor(canvasConf.width / 2);
+        this.rabbit.y = 170;
+        this.stage.add(this.rabbit);
+        return this;
+    };
+
+    /*画月饼*/
+    Game.prototype.drawMoonCake = function (type, image, speed) {
+        var moonCake;
+        moonCake = MoonCake({
+            type: type,
+            image: image,
+            speed: speed
+        });
+        moonCake.x = (Math.random() * (canvasConf.width - moonCake.width)) | 0;
+        this.moonCakes.push(moonCake);
+        this.add(moonCake);
+        return this;
     };
 
     /*游戏计时*/
-    Game.prototype.Timing = function (time) {
+    Game.prototype.Ticking = function (time) {
+        var me = this,
+            ratio = (time - this.lastTick) / defaultInterval,
+            rabbit = this.rabbit,
+            minLeft = 0,
+            maxLeft = canvasConf.width - rabbit.width,
+            maxHeight,
+            cake,
+            cakeLen = this.moonCakes.length,
+            plus,
+            plusLen = this.pluss.length;
+        //记录游戏时间
+        this.spendTime = time;
+        this.lastTick = time;
+        //处理兔子的逻辑
+        switch (rabbit.moving) {
+            case rabbitConf.left:
+                if (rabbit.speed < rabbitConf.maxSpeed) {
+                    rabbit.speed++;
+                }
+                if (rabbit.x > minLeft) {
+                    rabbit.x = Math.max(minLeft, rabbit.x - (rabbit.speed * ratio) | 0);
+                }
+                if (rabbit.leftCount++ % rabbitConf.frameInterval == 0) {
+                    if (++rabbit.leftFrame == rabbitConf.frameLength) {
+                        rabbit.leftFrame = 0;
+                    }
+                }
+                break;
+            case rabbitConf.right:
+                if (rabbit.speed < rabbitConf.maxSpeed) {
+                    rabbit.speed++;
+                }
+                if (rabbit.x < maxLeft) {
+                    rabbit.x = Math.min(maxLeft, rabbit.x + (rabbit.speed * ratio) | 0);
+                }
+                if (rabbit.rightCount++ % rabbitConf.frameInterval == 0) {
+                    if (++rabbit.rightFrame == rabbitConf.frameLength) {
+                        rabbit.rightFrame = 0;
+                    }
+                }
+                break;
+        }
+        //随机创建月饼
+        if (++this.gameFrame % 30 == 0) {
+            drawMooncakeRan();
+        }
+        //处理月饼下落逻辑
+        while (cakeLen--) {
+            cake = this.moonCakes[cakeLen];
+            maxHeight = canvasConf.height - cake.height;
+            cake.y = Math.min(maxHeight, cake.y + (cake.speed * ratio) | 0);
+            if (cake.y == maxHeight) {
+                this.remove(cake);
+                this.moonCakes.splice(cakeLen, 1);
+            } else {
+                this.collisionDetect(cake, cakeLen);
+            }
+        }
+        //处理加分逻辑
+        while (plusLen--) {
+            plus = this.pluss[plusLen];
+            plus.y = Math.max(80, plus.y - (3 * ratio) | 0);
+            if (plus.y == 80) {
+                setTimeout(function () {
+                    me.stage.remove(plus);
+                }, 500);
+                this.pluss.splice(plusLen, 1);
+            }
+        }
+
+        function drawMooncakeRan() {
+            var ran, boomRate, superRate, smallRate,
+                normalRate, bigRate, type, speed;
+            ran = Math.random();
+            boomRate = difficultyMap[me.difficulty] * me.level;
+            superRate = 1 - boomRate;
+            smallRate = (superRate) / 4;
+            normalRate = smallRate * 2;
+            bigRate = smallRate * 3;
+            switch (true) {
+                case ran >= superRate:
+                    type = cakeConf.boom;
+                    break;
+                case ran >= bigRate:
+                    type = cakeConf.huge;
+                    break;
+                case ran >= normalRate:
+                    type = cakeConf.big;
+                    break;
+                case ran >= smallRate:
+                    type = cakeConf.normal;
+                    break;
+                default:
+                    type = cakeConf.small;
+                    break;
+            }
+            speed = speedMap[(Math.random() * 4) | 0];
+            me.drawMoonCake(type, images.icon, speed);
+        }
 
     };
 
     /*碰撞检测*/
-    Game.prototype.collisionDetect = function () {
-        var len = moonkCakes.length,
-            cake;
-        while (len--) {
-            cake = moonkCakes[len];
-            if (cake.y >= canvasConf.height - cake.height && cake.y <= canvasConf.height) {
-                if (cake.x + cake.width >= rabbit.left && cake.x <= rabbit.left + rabbit.width) {
-                    switch (cake.type) {
-                        case cakeConf.boom: //炸弹
-                            cake.boom();
-                            if (restLife--) {
-                                result = resultConf.lose;
-                                events.emit("game.over", result, spendTime, score);
-                                gameOver();
-                            }
-                            break;
-                        default:
-                            //播放背景音乐
-                            break;
-                    }
-                    moonkCakes.splice(len, 1);
-                    this.remove(cake);
+    Game.prototype.collisionDetect = function (cake, len) {
+        var rabbit = this.rabbit;
+        if (cake.y > canvasConf.height - cake.height - rabbit.height && cake.y < canvasConf.height - cake.height) {
+            if (cake.x + cake.width >= rabbit.x && cake.x <= rabbit.x + rabbit.width) {
+                switch (cake.type) {
+                    case cakeConf.boom: //炸弹
+                        //cake.boom();
+                        this.boomAudioPool.play();
+                        if (this.restLife--) {
+                            this.result = resultConf.lose;
+                            this.gameOver();
+                        }
+                        break;
+                    default:
+                        //播放背景音乐
+                        this.cakeAudioPool.play();
+                        this.score += cake.value;
+                        switch (true) {
+                            case this.score >= scoreConf.overflow:
+                                rabbit.basketState = basketConf.overflow;
+                            case this.score >= scoreConf.full:
+                                rabbit.basketState = basketConf.full;
+                            case this.score >= scoreConf.litte:
+                                rabbit.basketState = basketConf.little;
+                        }
+                        this.drawPlus(cake.type, cake.x);
+                        break;
                 }
+                this.remove(cake);
+                this.moonCakes.splice(len, 1);
             }
-
         }
-    }
-
-    /*画兔子*/
-    Game.prototype.drawRabbit = function () {
-
     };
-
-    /*画生命值*/
-    Game.prototype.drawLife = function () {
-
-    };
-
-    /*画积分*/
-    Game.prototype.drawScore = function (score) {
-
-    };
-
-    function noop() {
-
-    }
-
-    /*事件绑定*/
-    function bindEvents() {
-        events.on("moonCake.check", checkMoonCake);
-        events.on("gameConfig.totalLifeChange", changeLife);
-        events.on("gameConfig.rabbitTypeChange", changeRabbitType);
-        events.on("gameConfig.totalTimeChange", changeTotalTime);
-        events.on("gameConfig.bgMusicChange", changeBgMusic);
-        events.on("game.exit", exitGame);
-
-        $exit.click(function () {
-            events.emit("game.exit");
-        });
-    }
-
-    /*清除事件绑定*/
-    function unbindEvents() {
-        events.un("moonCake.check", checkMoonCake);
-        events.un("gameConfig.totalLifeChange", changeLife);
-        events.un("gameConfig.rabbitTypeChange", changeRabbitType);
-        events.un("gameConfig.totalTimeChange", changeTotalTime);
-        events.un("gameConfig.bgMusicChange", changeBgMusic);
-    }
 
     /*游戏结束*/
-    function gameOver() {
+    Game.prototype.gameOver = function () {
+        this.state = stateConf.end;
+        //this.tick.stop();
+        //this.stop();
+    };
 
-    }
+    /*事件绑定*/
+    Game.prototype.bindEvent = function () {
+        var me = this;
+        document.addEventListener("keydown", function (e) {
+            me.onKeyDown(e);
+        });
+        document.addEventListener("keyup", function (e) {
+            me.onKeyUp(e);
+        });
+    };
 
-    /*退出游戏*/
-    function exitGame() {
-        //player = null;
-    }
+    /*键盘按下*/
+    Game.prototype.onKeyDown = function (e) {
+        var rabbit = this.rabbit;
+        switch (e.keyCode) {
+            case keyCodeMap.Left: //left
+                rabbit.moving = rabbit.direction = rabbitConf.left;
+                break;
+            case keyCodeMap.Right: //right
+                rabbit.moving = rabbit.direction = rabbitConf.right;
+                break;
+        }
+    };
+
+    /*键盘弹起*/
+    Game.prototype.onKeyUp = function (e) {
+        var rabbit = this.rabbit;
+        switch (e.which) {
+            case keyCodeMap.Left: //left
+                if (rabbit.moving == rabbitConf.left) {
+                    rabbit.direction = rabbitConf.left;
+                    rabbit.moving = rabbitConf.stop;
+                    rabbit.leftFarme = rabbitConf.leftDefaultFrame;
+                    rabbit.leftCount = 0;
+                    rabbit.speed = 0;
+                }
+                break;
+            case keyCodeMap.Right: //right
+                if (rabbit.moving == rabbitConf.right) {
+                    rabbit.direction = rabbitConf.right;
+                    rabbit.moving = rabbitConf.stop;
+                    rabbit.rightFrame = rabbitConf.rightDefaultFrame;
+                    rabbit.rightCount = 0;
+                    rabbit.speed = 0;
+                }
+                break;
+        }
+    };
 
     var game = new Game();
 
