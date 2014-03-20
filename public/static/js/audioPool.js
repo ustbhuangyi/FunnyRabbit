@@ -23,9 +23,14 @@ define(function (require, exports, module) {
         this.newAudio();
     }
 
+    AudioPool.prototype.stop = canAudioPlay ? function () {
+        this.currenAudio && this.currenAudio.pause();
+    } : noop;
+
     AudioPool.prototype.play = canAudioPlay ? function () {
         var audio = this.pool.shift();
         audio.play();
+        this.currenAudio = audio;
         if (this.pool.length < 1) {
             this.newAudio();
         }

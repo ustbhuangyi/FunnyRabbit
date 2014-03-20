@@ -10,8 +10,7 @@
 */
 define(function (require, exports, module) {
 
-    var events = require("events"),
-        config = require("config"),
+    var config = require("config"),
         imageloader = require("imageloader"),
         MoonCake = require("moonCake"),
         Rabbit = require("rabbit"),
@@ -21,14 +20,11 @@ define(function (require, exports, module) {
         Stage = require("stage");
 
     var canvasConf = config.get("canvas"),
-        stageConf = config.get("stage"),
         cakeConf = config.get("cake"),
         resultConf = config.get("result"),
         gameConf = config.get("game"),
         soundConf = config.get("sound"),
         rabbitConf = config.get("rabbit"),
-        stateConf = config.get("state"),
-        cakeConf = config.get("cake"),
         scoreConf = config.get("score"),
         basketConf = config.get("basket"),
         images = config.get("image");
@@ -37,9 +33,12 @@ define(function (require, exports, module) {
         difficultyMap = [0.05, 0.1], //炸弹概率，游戏难度而定
         speedMap = [2, 3, 4, 5], //月饼掉落速度
         lifeMap = ["217 84", "37 84", "217 0", "37 0"], //生命条
+        boomMap = ["0 0", "138 0", "291 0", "436 0"], //炸弹坐标
         scoreMap = ["277 244", "72 244", "94 244", "118 244", "140 244", "163 244", "186 244", "209 244", "232 244", "254 244"], //记分牌
         timeMap = ["332 179", "6 179", "41 179", "78 179", "113 179", "150 179", "187 179", "224 179", "259 179", "295 179"], //倒计时
         plusMap = ["250 292", "186 292", "124 292", "66 292"],  //加分
+        rabbitLoseMap = ["0 0", "163 0", "327 0", "491 0", "655 0", "819 0", "0 135", "166 135", "333 135", "500 135", "668 135", "835 135", "0 262"], //兔子被炸动画
+        rabbitWinMap = ["0 0", "198 0", "401 0", "609 0", "816 0", "0 96", "208 97", "415 97", "623 97", "831 97", "0 203", "207 203", "415 203", "623 203", "831 203", "0 307", "206 307", "414 307", "623 307"], //兔子胜利动画
         hao123Map = [
                   [
                    [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [1, 1], [2, 1], [3, 2], [3, 3], [3, 4]
@@ -64,283 +63,61 @@ define(function (require, exports, module) {
              Left: 37,
              Right: 39
          },
+         state = {
+             uninit: 0,
+             start: 1,
+             end: 2
+         },
          defaultInterval = 1000 / 60;
 
-    function Game() { }
 
-    Game.prototype = new Stage();
-
-    Game.prototype.init = function (context) {
-        var me = this;
-        if (this.state >= stateConf.start)
-            return;
-        this.state = stateConf.start;
-        Stage.call(this, context, canvasConf.width, canvasConf.height);
-        this.preloadImage(function (success) {
-            if (success) {
-                me.spendTime = 0;
-                me.score = 0;
-                me.level = 1;
-                me.gameFrame = 0;
-                me.difficulty = gameConf.difficulty;
-                me.totalTime = gameConf.time;
-                me.rabbitType = gameConf.rabbitType;
-                me.restLife = gameConf.life;
-                me.moonCakes = [];
-                me.pluss = [];
-                // this.rabbit = new Rabbit();
-                //this.add(this.rabbit);
-                me.cakeAudioPool = new AudioPool(soundConf.cake);
-                me.boomAudioPool = new AudioPool(soundConf.boom);
-                me.winAudioPool = new AudioPool(soundConf.win);
-                me.loseAudioPool = new AudioPool(soundConf.lose);
-                me.drawStage().drawTime().drawLife().drawScore().drawRabbit().start();
-                //this.drawLife();
-                me.lastTick = 0;
-                me.tick = new Timeline(); //计时器
-                me.tick.onenterframe = function (time) {
-                    me.Ticking(time);
-                };
-                me.tick.start();
-                me.bindEvent();
-            } else {
-                throw new Error("fail to load images");
-            }
-        });
-    };
-
-    /*图片预加载*/
-    Game.prototype.preloadImage = function (callback) {
-        imageloader(images, function (success) {
-            callback(success);
-        });
-    };
-
-    /*画舞台*/
-    Game.prototype.drawStage = function () {
-        var width = stageConf.width,
-            height = stageConf.height;
-        //var me = this;
-        this.stage = new Sprite(function (context, time) {
-            //console.log(context == me.context);
-            context.drawImage(images.bg.img, 140, 0, width, height, 0, 0, width, height);
-            //context.drawImage(document.getElementById("hehe"), 0, 0);
-        });
-        this.stage.x = 0,
-        this.stage.y = canvasConf.height - height;
-        this.add(this.stage);
-        return this;
-    };
-
-    /*画倒计时*/
-    Game.prototype.drawTime = function () {
+    /*绘制动画统一方法*/
+    function drawAnimation(context, time) {
         var me = this,
-            icon = images.icon.img,
-            width = 25,
-            height = 35,
-            timeLen = 2,
-            time;
-
-        for (var i = 0; i < timeLen; i++) {
-            (function (index) {
-                time = new Sprite(function (context, time) {
-                    var time = Math.max(0, Math.floor(me.totalTime - Math.floor(me.spendTime / 1000))),
-                        base = Math.pow(10, timeLen - index),
-                        num = ((time % base) * 10 / base) | 0;
-                    draw(context, num);
-                });
-                time.x = 20 + index * width;
-                time.y = 94;
-                me.stage.add(time);
-            })(i);
-        }
-
-        function draw(context, num) {
-            var positions = timeMap[num].split(' ');
-            context.drawImage(icon, positions[0], positions[1], width, height, 0, 0, width, height);
-        }
-
-        return this;
-    };
-
-    /*画生命条*/
-    Game.prototype.drawLife = function () {
-        var me = this,
-            icon = images.icon.img,
-            width = 125,
-            height = 70,
-            life;
-
-        life = new Sprite(function (context, time) {
-            var positions = lifeMap[me.restLife].split(' ');
-            context.drawImage(icon, positions[0], positions[1], width, height, 0, 0, width, height);
-        });
-        life.x = 50;
-        life.y = 180;
-
-        this.stage.add(life);
-
-        return this;
-    };
-
-    /*画分数*/
-    Game.prototype.drawScore = function () {
-        var me = this,
-            icon = images.icon.img,
-            width = 17,
-            height = 25,
-            scoreLen = 7,
-            score;
-
-        for (var i = 0; i < scoreLen; i++) {
-            (function (index) {
-                score = new Sprite(function (context, time) {
-                    var base = Math.pow(10, scoreLen - index),
-                        num = ((me.score % base) * 10 / base) | 0;
-                    draw(context, num);
-                });
-                score.x = 829 + width * index;
-                score.y = 28;
-                me.stage.add(score);
-            })(i);
-        }
-
-        function draw(context, num) {
-            var positions = scoreMap[num].split(' ');
-            context.drawImage(icon, positions[0], positions[1], width, height, 0, 0, width, height);
-        }
-
-        return this;
-    };
-
-    /*画加分*/
-    Game.prototype.drawPlus = function (type, x, y) {
-        var me = this,
-            icon = images.icon.img,
-            width = scoreWidthMap[type],
-            height = 14,
-            plus;
-
-        plus = new Sprite(doDraw)
-        plus.lastTick = this.lastTick;
-        plus.x = x;
-        plus.alpha = 1;
-        plus.y = y || 156;
-        this.stage.add(plus);
-
-        return this;
-
-        function doDraw(context, time) {
-            var that = this,
-                positions = plusMap[type].split(' '),
-                ratio = (time - this.lastTick) / defaultInterval;
-            this.lastTick = time;
-            this.y = Math.max(80, this.y - (3 * ratio) | 0);
-            if (this.y == 80) {
-                this.alpha = Math.max(0, (this.alpha - 0.03 * ratio));
-                context.globalAlpha = this.alpha;
-                if (this.alpha == 0) {
-                    setTimeout(function () {
-                        that.parent.remove(that);
-                    }, 0);
-                }
-            }
-            context.drawImage(icon, positions[0], positions[1], width, height, 0, 0, width, height);
-            context.globalAlpha = 1;
-        }
-    };
-
-
-
-    /*画兔子*/
-    Game.prototype.drawRabbit = function () {
-        this.rabbit = Rabbit(images);
-        this.rabbit.x = Math.floor(canvasConf.width / 2);
-        this.rabbit.y = 170;
-        this.stage.add(this.rabbit);
-        return this;
-    };
-
-    /*画月饼*/
-    Game.prototype.drawMoonCake = function (type, image, speed) {
-        var moonCake;
-        moonCake = MoonCake({
-            type: type,
-            image: image,
-            speed: speed
-        });
-        moonCake.x = (Math.random() * (canvasConf.width - moonCake.width)) | 0;
-        this.moonCakes.push(moonCake);
-        this.add(moonCake);
-        return this;
-    };
-
-    /*游戏计时*/
-    Game.prototype.Ticking = function (time) {
-        var me = this,
-            ratio = (time - this.lastTick) / defaultInterval,
-            rabbit = this.rabbit,
-            minLeft = 0,
-            maxLeft = canvasConf.width - rabbit.width,
-            maxHeight,
-            cake,
-            cakeLen = this.moonCakes.length,
-            plus,
-            plusLen = this.pluss.length;
-        //记录游戏时间
-        this.spendTime = time;
+            width = this.width,
+            height = this.height,
+            frameLen = this.map.length - 1,
+            delta = (time - this.lastTick) / defaultInterval,
+            positions;
         this.lastTick = time;
-        //处理兔子的逻辑
-        switch (rabbit.moving) {
-            case rabbitConf.left:
-                if (rabbit.speed < rabbitConf.maxSpeed) {
-                    rabbit.speed++;
-                }
-                if (rabbit.x > minLeft) {
-                    rabbit.x = Math.max(minLeft, rabbit.x - (rabbit.speed * ratio) | 0);
-                }
-                if (rabbit.leftCount++ % rabbitConf.frameInterval == 0) {
-                    if (++rabbit.leftFrame == rabbitConf.frameLength) {
-                        rabbit.leftFrame = 0;
-                    }
-                }
-                break;
-            case rabbitConf.right:
-                if (rabbit.speed < rabbitConf.maxSpeed) {
-                    rabbit.speed++;
-                }
-                if (rabbit.x < maxLeft) {
-                    rabbit.x = Math.min(maxLeft, rabbit.x + (rabbit.speed * ratio) | 0);
-                }
-                if (rabbit.rightCount++ % rabbitConf.frameInterval == 0) {
-                    if (++rabbit.rightFrame == rabbitConf.frameLength) {
-                        rabbit.rightFrame = 0;
-                    }
-                }
-                break;
-        }
-        //随机创建月饼
-        if (++this.gameFrame % 30 == 0) {
-            drawMooncakeRan.call(this);
-        }
-        //处理月饼下落逻辑
-        while (cakeLen--) {
-            cake = this.moonCakes[cakeLen];
-            maxHeight = canvasConf.height - cake.height;
-            cake.y = Math.min(maxHeight, cake.y + (cake.speed * ratio) | 0);
-            if (cake.y == maxHeight) {
-                cake.alpha = Math.max(0, cake.alpha - 0.02 * ratio);
-                if (cake.alpha == 0) {
-                    this.remove(cake);
-                    this.moonCakes.splice(cakeLen, 1);
-                }
-            } else {
-                this.collisionDetect(cake, cakeLen);
+        this.frameCount = this.frameCount + ((delta + 0.5) | 0);
+        this.frame = Math.min(frameLen, ((this.frameCount / this.frameInterval) | 0));
+        positions = this.map[this.frame].split(' ');
+        context.drawImage(this.image, positions[0], positions[1], width, height, 0, 0, width, height);
+        if (this.frame == frameLen) {
+            if (!this.removed) {
+                this.removed = true;
+                setTimeout(function () {
+                    me.parent.remove(me);
+                    me.callback && me.callback();
+                }, 200);
             }
         }
+    }
 
-    };
+    /*加分onPaint*/
+    function doDrawPlus(context, time) {
+        var me = this,
+            width = this.width,
+            height = this.height,
+            positions = plusMap[this.type].split(' '),
+            delta = (time - this.lastTick) / defaultInterval;
+        this.lastTick = time;
+        this.y = Math.max(80, this.y - (3 * delta) | 0);
+        if (this.y == 80) {
+            this.alpha = Math.max(0, (this.alpha - 0.03 * delta));
+            context.globalAlpha = this.alpha;
+            if (this.alpha == 0) {
+                setTimeout(function () {
+                    me.parent.remove(me);
+                }, 0);
+            }
+        }
+        context.drawImage(this.image, positions[0], positions[1], width, height, 0, 0, width, height);
+        context.globalAlpha = 1;
+    }
 
+    /*随机创建月饼*/
     function drawMooncakeRan() {
         var ran, boomRate, superRate, smallRate,
                 normalRate, bigRate, type, speed;
@@ -368,8 +145,268 @@ define(function (require, exports, module) {
                 break;
         }
         speed = speedMap[(Math.random() * 4) | 0];
-        this.drawMoonCake(type, images.icon, speed);
+        this.drawMoonCake(type, images.icon.img, speed);
     }
+
+
+    function Game() { }
+
+    Game.prototype = new Stage();
+
+    Game.prototype.init = function (context) {
+        var me = this;
+        if (this.state >= state.start)
+            return;
+        this.state = state.start;
+        Stage.call(this, context, canvasConf.width, canvasConf.height);
+        this.preloadImage(function (success) {
+            if (success) {
+                me.spendTime = 0;
+                me.score = 0;
+                me.level = 1;
+                me.gameFrame = 0;
+                me.result = resultConf.win;
+                me.difficulty = gameConf.difficulty;
+                me.totalTime = gameConf.time;
+                me.rabbitType = gameConf.rabbitType;
+                me.restLife = gameConf.life;
+                me.moonCakes = [];
+                me.pluss = [];
+                // this.rabbit = new Rabbit();
+                //this.add(this.rabbit);
+                me.bgAudioPool = new AudioPool(soundConf.bg);
+                me.cakeAudioPool = new AudioPool(soundConf.cake);
+                me.boomAudioPool = new AudioPool(soundConf.boom);
+                me.winAudioPool = new AudioPool(soundConf.win);
+                me.loseAudioPool = new AudioPool(soundConf.lose);
+                me.bgAudioPool.play();
+                me.drawStage().drawTime().drawLife().drawScore().drawRabbit().start();
+                //this.drawLife();
+                me.lastTick = 0;
+                me.tick = new Timeline(); //计时器
+                me.tick.onenterframe = function (time) {
+                    me.Ticking(time);
+                };
+                me.tick.start();
+                me.bindEvent();
+
+            } else {
+                throw new Error("fail to load images");
+            }
+        });
+    };
+
+    /*图片预加载*/
+    Game.prototype.preloadImage = function (callback) {
+        imageloader(images, function (success) {
+            callback(success);
+        });
+    };
+
+    /*画舞台*/
+    Game.prototype.drawStage = function () {
+        var width = 1000,
+            height = 250;
+        //var me = this;
+        this.stage = new Sprite(function (context, time) {
+            //console.log(context == me.context);
+            context.drawImage(images.bg.img, 140, 0, width, height, 0, 0, width, height);
+            //context.drawImage(document.getElementById("hehe"), 0, 0);
+        });
+        this.stage.x = 0,
+        this.stage.y = canvasConf.height - height;
+        this.add(this.stage);
+        return this;
+    };
+
+    /*画倒计时*/
+    Game.prototype.drawTime = function () {
+        var me = this,
+            image = images.icon.img,
+            width = 25,
+            height = 35,
+            timeLen = 2,
+            time;
+
+        for (var i = 0; i < timeLen; i++) {
+            (function (index) {
+                time = new Sprite(function (context, time) {
+                    var time = Math.max(0, (me.totalTime - ((me.spendTime / 1000) - 0.5) | 0) | 0),
+                        base = Math.pow(10, timeLen - index),
+                        num = ((time % base) * 10 / base) | 0;
+                    draw(context, num);
+                });
+                time.x = 20 + index * width;
+                time.y = 94;
+                me.stage.add(time);
+            })(i);
+        }
+
+        function draw(context, num) {
+            var positions = timeMap[num].split(' ');
+            context.drawImage(image, positions[0], positions[1], width, height, 0, 0, width, height);
+        }
+
+        return this;
+    };
+
+    /*画生命条*/
+    Game.prototype.drawLife = function () {
+        var me = this,
+            image = images.icon.img,
+            width = 125,
+            height = 70,
+            life;
+
+        life = new Sprite(function (context, time) {
+            var positions = lifeMap[me.restLife].split(' ');
+            context.drawImage(image, positions[0], positions[1], width, height, 0, 0, width, height);
+        });
+        life.x = 50;
+        life.y = 180;
+
+        this.stage.add(life);
+
+        return this;
+    };
+
+    /*画分数*/
+    Game.prototype.drawScore = function () {
+        var me = this,
+            image = images.icon.img,
+            width = 17,
+            height = 25,
+            scoreLen = 7,
+            score;
+
+        for (var i = 0; i < scoreLen; i++) {
+            (function (index) {
+                score = new Sprite(function (context, time) {
+                    var base = Math.pow(10, scoreLen - index),
+                        num = ((me.score % base) * 10 / base) | 0;
+                    draw(context, num);
+                });
+                score.x = 829 + width * index;
+                score.y = 28;
+                me.stage.add(score);
+            })(i);
+        }
+
+        function draw(context, num) {
+            var positions = scoreMap[num].split(' ');
+            context.drawImage(image, positions[0], positions[1], width, height, 0, 0, width, height);
+        }
+
+        return this;
+    };
+
+    /*画加分*/
+    Game.prototype.drawPlus = function (type, x, y) {
+        var plus = new Sprite(doDrawPlus);
+        plus.lastTick = this.lastTick;
+        plus.x = x;
+        plus.alpha = 1;
+        plus.type = type;
+        plus.y = y || 156;
+        plus.width = scoreWidthMap[type];
+        plus.height = 14;
+        plus.image = images.icon.img;
+        this.stage.add(plus);
+
+        return this;
+
+        return this;
+
+    };
+
+    /*画兔子*/
+    Game.prototype.drawRabbit = function () {
+        this.rabbit = Rabbit(images);
+        this.rabbit.x = (canvasConf.width / 2) | 0;
+        this.rabbit.y = 170;
+        this.stage.add(this.rabbit);
+        return this;
+    };
+
+    /*画月饼*/
+    Game.prototype.drawMoonCake = function (type, image, speed) {
+        var moonCake;
+        moonCake = MoonCake({
+            type: type,
+            image: image,
+            speed: speed
+        });
+        moonCake.x = (Math.random() * (canvasConf.width - moonCake.width)) | 0;
+        this.moonCakes.push(moonCake);
+        this.add(moonCake);
+        return this;
+    };
+
+    /*游戏计时*/
+    Game.prototype.Ticking = function (time) {
+        var me = this,
+            delta = (time - this.lastTick) / defaultInterval,
+            rabbit = this.rabbit,
+            minLeft = 0,
+            maxLeft = canvasConf.width - rabbit.width,
+            maxHeight,
+            cake,
+            cakeLen = this.moonCakes.length;
+        if (this.state != state.start)
+            return;
+        //记录游戏时间
+        this.spendTime = time;
+        //判断游戏时间是否到了
+        if (this.spendTime >= this.totalTime * 1000) {
+            this.gameOver();
+            return;
+        }
+        this.lastTick = time;
+        //处理兔子的逻辑
+        switch (rabbit.moving) {
+            case rabbitConf.left:
+                if (rabbit.speed < rabbitConf.maxSpeed) {
+                    rabbit.speed++;
+                }
+                if (rabbit.x > minLeft) {
+                    rabbit.x = Math.max(minLeft, rabbit.x - (rabbit.speed * delta) | 0);
+                }
+                rabbit.leftCount = rabbit.leftCount + ((delta + 0.5) | 0);
+                rabbit.leftFrame = ((rabbit.leftCount / rabbitConf.frameInterval) | 0) % rabbitConf.frameLength;
+
+                break;
+            case rabbitConf.right:
+                if (rabbit.speed < rabbitConf.maxSpeed) {
+                    rabbit.speed++;
+                }
+                if (rabbit.x < maxLeft) {
+                    rabbit.x = Math.min(maxLeft, rabbit.x + (rabbit.speed * delta) | 0);
+                }
+                rabbit.rightCount = rabbit.rightCount + ((delta + 0.5) | 0);
+                rabbit.rightFrame = ((rabbit.rightCount / rabbitConf.frameInterval) | 0) % rabbitConf.frameLength;
+                break;
+        }
+        //随机创建月饼
+        if (++this.gameFrame % 30 == 0) {
+            drawMooncakeRan.call(this);
+        }
+        //处理月饼下落逻辑
+        while (cakeLen--) {
+            cake = this.moonCakes[cakeLen];
+            maxHeight = canvasConf.height - cake.height;
+            cake.y = Math.min(maxHeight, cake.y + (cake.speed * delta) | 0);
+            if (cake.y == maxHeight) {
+                cake.alpha = Math.max(0, cake.alpha - 0.03 * delta);
+                if (cake.alpha == 0) {
+                    this.remove(cake);
+                    this.moonCakes.splice(cakeLen, 1);
+                }
+            } else {
+                this.collisionDetect(cake, cakeLen);
+            }
+        }
+
+    };
 
     /*碰撞检测*/
     Game.prototype.collisionDetect = function (cake, len) {
@@ -378,9 +415,9 @@ define(function (require, exports, module) {
             if (cake.x + cake.width >= rabbit.x && cake.x <= rabbit.x + rabbit.width) {
                 switch (cake.type) {
                     case cakeConf.boom: //炸弹
-                        //cake.boom();
+                        this.drawBoom(cake.x);
                         this.boomAudioPool.play();
-                        if (this.restLife--) {
+                        if (! --this.restLife) {
                             this.result = resultConf.lose;
                             this.gameOver();
                         }
@@ -409,11 +446,92 @@ define(function (require, exports, module) {
         }
     };
 
+    /*炸弹爆炸动画*/
+    Game.prototype.drawBoom = function (x, y) {
+        var boom = new Sprite(drawAnimation);
+        boom.lastTick = this.lastTick;
+        boom.x = x;
+        boom.y = y || 90;
+        boom.width = 92;
+        boom.height = 80;
+        boom.frame = 0;
+        boom.frameCount = 0;
+        boom.frameInterval = 12;
+        boom.map = boomMap;
+        boom.image = images.boom.img;
+        this.stage.add(boom);
+
+        return this;
+    };
+
     /*游戏结束*/
     Game.prototype.gameOver = function () {
-        this.state = stateConf.end;
-        //this.tick.stop();
+        var me = this;
+        this.state = state.end;
+        this.stage.remove(this.rabbit);
+        me.bgAudioPool.stop();
+        if (this.result == resultConf.win) {
+            this.winAudioPool.play();
+            this.drawWin(function () {
+                me.dispose();
+            });
+        } else {
+            this.loseAudioPool.play();
+            this.drawLose(function () {
+                me.dispose();
+            });
+        }
+        this.tick.stop();
         //this.stop();
+    };
+
+    /*资源释放*/
+    Game.prototype.dispose = function () {
+        this.stop();
+        this.rabbit = null;
+        this.bgAudioPool = null;
+        this.cakeAudioPool = null;
+        this.boomAudioPool = null;
+        this.winAudioPool = null;
+        this.loseAudioPool = null;
+    };
+
+    /*游戏胜利动画*/
+    Game.prototype.drawWin = function (callback) {
+        var win = new Sprite(drawAnimation);
+        win.lastTick = this.lastTick;
+        win.x = this.rabbit.x;
+        win.y = 170;
+        win.width = 100;
+        win.height = 80;
+        win.frame = 0;
+        win.frameCount = 0;
+        win.frameInterval = 12;
+        win.map = rabbitWinMap;
+        win.image = images.rabbitWin.img;
+        win.callback = callback;
+        this.stage.add(win);
+
+        return this;
+    };
+
+    /*游戏失败动画*/
+    Game.prototype.drawLose = function (callback) {
+        var lose = new Sprite(drawAnimation);
+        lose.lastTick = this.lastTick;
+        lose.x = this.rabbit.x;
+        lose.y = 170;
+        lose.width = 100;
+        lose.height = 86;
+        lose.frame = 0;
+        lose.frameCount = 0;
+        lose.frameInterval = 12;
+        lose.map = rabbitLoseMap;
+        lose.image = images.rabbitLose.img;
+        lose.callback = callback;
+        this.stage.add(lose);
+
+        return this;
     };
 
     /*事件绑定*/
@@ -464,6 +582,8 @@ define(function (require, exports, module) {
                 break;
         }
     };
+
+    Game.prototype.constructor = Game;
 
     var game = new Game();
 

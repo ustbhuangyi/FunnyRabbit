@@ -1,11 +1,6 @@
 ﻿define(function (require, exports, module) {
 
     var DEFALUT_SETTINGS = {
-        state: {
-            uninit: 0,
-            start: 1,
-            end: 2
-        },
         game: {
             life: 1,
             time: 60,
@@ -15,10 +10,6 @@
         canvas: {
             width: 1000,
             height: 650
-        },
-        stage: {
-            width: 1000,
-            height: 250
         },
         image: {
             bg: "http://s0.hao123img.com/res/img/zhongqiu-bg.png",
@@ -35,7 +26,6 @@
         },
         sound: {
             bg: {
-                ogg: "http://s1.hao123img.com/res/swf/zhongqiubg.ogg",
                 mp3: "http://s1.hao123img.com/res/swf/zhongqiubg.mp3"
             },
             cake: {
@@ -51,8 +41,8 @@
                 mp3: "http://s0.hao123img.com/res/swf/sound/win.mp3"
             },
             lose: {
-                ogg: "http://s0.hao123img.com/res/swf/sound/lose.ogg'",
-                mp3: "http://s0.hao123img.com/res/swf/sound/lose.mp3'"
+                ogg: "http://s0.hao123img.com/res/swf/sound/lose.ogg",
+                mp3: "http://s0.hao123img.com/res/swf/sound/lose.mp3"
             }
         },
         rabbit: {
@@ -68,7 +58,7 @@
             leftDefaultFrame: 1,
             rightDefaultFrame: 4,
             frameLength: 6,
-            frameInterval: 4,
+            frameInterval: 6,
             loseFrameLength: 13,
             winFrameLength: 19
         },

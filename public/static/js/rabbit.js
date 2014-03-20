@@ -5,9 +5,7 @@
 */
 define(function (require, exports, module) {
 
-    var events = require("events"),
-        Sprite = require("sprite"),
-        $ = require("jquery"),
+    var Sprite = require("sprite"),
         config = require("config");
 
     var rabbitConf = config.get("rabbit"),
@@ -46,11 +44,8 @@ define(function (require, exports, module) {
     runningMap = [
                     [smallLeftRunningMap, smallRightRunningMap],
                     [bigLeftRunningMap, bigRightRunningMap]
-                 ],
-    /*兔子被炸动画*/
-    rabbitLoseMap = ["0 0", "-163 0", "-327 0", "-491 0", "-655 0", "-819 0", "0 -135", "-166 -135", "-333 -135", "-500 -135", "-668 -135", "-835 -135", "0 -262"],
-    /*兔子胜利动画*/
-    rabbitWinMap = ["0 0", "-198 0", "-401 0", "-609 0", "-816 0", "0 -96", "-208 -97", "-415 -97", "-623 -97", "-831 -97", "0 -203", "-207 -203", "-415 -203", "-623 -203", "-831 -203", "0 -307", "-206 -307", "-414 -307", "-623 -307"];
+                 ];
+
 
 
     function Rabbit(images) {
@@ -87,44 +82,7 @@ define(function (require, exports, module) {
         context.drawImage(img, positions[0], positions[1], width, height, 0, 0, width, height);
     };
 
-    /*游戏结束*/
-    function gameOver(result, spendTime, score) {
-        $rabbit && $rabbit.remove();
-        if (result == WIN) {
-            rabbitWin(result, score);
-        }
-        else {
-            rabbitLose(result, score);
-        }
-        state = STATE_END;
-        unbindEvent();
-    }
-
-    /*兔子被雷炸动画*/
-    function rabbitLose(result, score) {
-        $rabbitLose = $(format(rabbitLoseTpl, {
-            left: left,
-            top: top
-        }));
-        $rabbitLose.appendTo($(container));
-        loseAnimation = animation().changePosition($rabbitLose, rabbitLoseMap).wait(function () {
-            gameover.show(result, score);
-        });
-        loseAnimation.start(200);
-    }
-
-    /*兔子胜利动画*/
-    function rabbitWin(result, score) {
-        $rabbitWin = $(format(rabbitWinTpl, {
-            left: left,
-            top: top
-        }));
-        $rabbitWin.appendTo($(container));
-        winAnimation = animation().changePosition($rabbitWin, rabbitWinMap).wait(function () {
-            gameover.show(result, score);
-        });
-        winAnimation.start(200);
-    }
+    Rabbit.prototype.constructor = Rabbit;
 
     module.exports = Rabbit.factory();
 });
