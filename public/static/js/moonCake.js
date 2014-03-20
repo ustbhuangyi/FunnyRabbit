@@ -7,9 +7,9 @@ define(function (require, exports, module) {
 
     var Sprite = require('sprite');
 
-    var valueMap = [500, 1000, 2000, 5000, 0], //月饼分值
-        sizeMap = [30, 40, 50, 60, 50], //月饼大小
-        positionMap = ["243 399", "161 394", "80 390", "0 384", "307 390"]; //月饼图坐标
+    var valueMap = [500, 1000, 2000, 5000, 0, 0, 0, 0, 0], //月饼分值
+        sizeMap = [30, 40, 50, 60, 50, 40, 40, 40, 40], //月饼大小
+        positionMap = ["243 399", "161 394", "80 390", "0 384", "307 390", "261 332", "125 332", "56 332", "193 332"]; ; //月饼图坐标
 
     /*月饼类*/
     function MoonCake(args) {

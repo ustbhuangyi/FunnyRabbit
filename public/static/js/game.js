@@ -27,6 +27,7 @@ define(function (require, exports, module) {
         rabbitConf = config.get("rabbit"),
         scoreConf = config.get("score"),
         basketConf = config.get("basket"),
+        haoConf = config.get("hao"),
         images = config.get("image");
 
     var scoreWidthMap = [42, 52, 52, 52], //分宽度
@@ -40,25 +41,25 @@ define(function (require, exports, module) {
         rabbitLoseMap = ["0 0", "163 0", "327 0", "491 0", "655 0", "819 0", "0 135", "166 135", "333 135", "500 135", "668 135", "835 135", "0 262"], //兔子被炸动画
         rabbitWinMap = ["0 0", "198 0", "401 0", "609 0", "816 0", "0 96", "208 97", "415 97", "623 97", "831 97", "0 203", "207 203", "415 203", "623 203", "831 203", "0 307", "206 307", "414 307", "623 307"], //兔子胜利动画
         hao123Map = [
-                  [
-                   [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [1, 1], [2, 1], [3, 2], [3, 3], [3, 4]
-                  ], //h
-                  [
-                   [4, 2], [4, 3], [5, 1], [5, 4], [6, 1], [6, 4], [7, 1], [7, 2], [7, 3], [7, 4]
-                  ], //a
-                  [
+                [
+                    [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [1, 1], [2, 1], [3, 2], [3, 3], [3, 4]
+                ], //h
+                [
+                    [4, 2], [4, 3], [5, 1], [5, 4], [6, 1], [6, 4], [7, 1], [7, 2], [7, 3], [7, 4]
+                ], //a
+                [
                     [8, 2], [8, 3], [9, 1], [9, 4], [10, 1], [10, 4], [11, 2], [11, 3]
-                  ], //o
-                  [
-                   [12, 0], [13, 0], [13, 1], [13, 2], [13, 3], [13, 4]
-                  ], //1
-                  [
-                     [14, 0], [14, 3], [14, 4], [15, 0], [15, 2], [15, 4], [16, 0], [16, 2], [16, 4], [17, 1], [17, 4]
-                  ], //2
-                  [
+                ], //o
+                [
+                    [12, 0], [13, 0], [13, 1], [13, 2], [13, 3], [13, 4]
+                ], //1
+                [
+                    [14, 0], [14, 3], [14, 4], [15, 0], [15, 2], [15, 4], [16, 0], [16, 2], [16, 4], [17, 1], [17, 4]
+                ], //2
+                [
                     [18, 0], [18, 4], [19, 0], [19, 2], [19, 4], [20, 0], [20, 2], [20, 4], [21, 1], [21, 3]
-                  ]//3
-                ],
+                ]//3
+            ],
          keyCodeMap = {
              Left: 37,
              Right: 39
@@ -100,7 +101,7 @@ define(function (require, exports, module) {
         var me = this,
             width = this.width,
             height = this.height,
-            positions = plusMap[this.type].split(' '),
+            positions = this.positions,
             delta = (time - this.lastTick) / defaultInterval;
         this.lastTick = time;
         this.y = Math.max(80, this.y - (3 * delta) | 0);
@@ -148,7 +149,6 @@ define(function (require, exports, module) {
         this.drawMoonCake(type, images.icon.img, speed);
     }
 
-
     function Game() { }
 
     Game.prototype = new Stage();
@@ -171,7 +171,8 @@ define(function (require, exports, module) {
                 me.rabbitType = gameConf.rabbitType;
                 me.restLife = gameConf.life;
                 me.moonCakes = [];
-                me.pluss = [];
+                me.needDrawHao123 = Math.random() <= haoConf.chance;
+                me.onceMap = {};
                 // this.rabbit = new Rabbit();
                 //this.add(this.rabbit);
                 me.bgAudioPool = new AudioPool(soundConf.bg);
@@ -179,14 +180,14 @@ define(function (require, exports, module) {
                 me.boomAudioPool = new AudioPool(soundConf.boom);
                 me.winAudioPool = new AudioPool(soundConf.win);
                 me.loseAudioPool = new AudioPool(soundConf.lose);
-                me.bgAudioPool.play();
+                //me.bgAudioPool.play();
                 me.drawStage().drawTime().drawLife().drawScore().drawRabbit().start();
                 //this.drawLife();
                 me.lastTick = 0;
                 me.tick = new Timeline(); //计时器
                 me.tick.onenterframe = function (time) {
                     me.Ticking(time);
-                };
+                }; 11
                 me.tick.start();
                 me.bindEvent();
 
@@ -311,9 +312,8 @@ define(function (require, exports, module) {
         plus.width = scoreWidthMap[type];
         plus.height = 14;
         plus.image = images.icon.img;
+        plus.positions = plusMap[type].split(' ');
         this.stage.add(plus);
-
-        return this;
 
         return this;
 
@@ -329,17 +329,30 @@ define(function (require, exports, module) {
     };
 
     /*画月饼*/
-    Game.prototype.drawMoonCake = function (type, image, speed) {
+    Game.prototype.drawMoonCake = function (type, image, speed, x, y) {
         var moonCake;
         moonCake = MoonCake({
             type: type,
             image: image,
             speed: speed
         });
-        moonCake.x = (Math.random() * (canvasConf.width - moonCake.width)) | 0;
+        moonCake.x = typeof (x) !== "undefined" ? x : (Math.random() * (canvasConf.width - moonCake.width)) | 0;
+        moonCake.y = typeof (y) !== "undefined" ? y : 0;
         this.moonCakes.push(moonCake);
         this.add(moonCake);
         return this;
+    };
+
+    /*彩蛋hao123*/
+    Game.prototype.drawHao123 = function () {
+        var cake, letter, position;
+        for (var i = 0, count = hao123Map.length; i < count; i++) {
+            letter = hao123Map[i];
+            for (var j = 0, len = letter.length; j < len; j++) {
+                position = letter[j];
+                this.drawMoonCake(haoConf.type, images.icon.img, haoConf.speed, position[0] * haoConf.size + haoConf.space * i, position[1] * haoConf.size);
+            }
+        }
     };
 
     /*游戏计时*/
@@ -356,10 +369,25 @@ define(function (require, exports, module) {
             return;
         //记录游戏时间
         this.spendTime = time;
-        //判断游戏时间是否到了
-        if (this.spendTime >= this.totalTime * 1000) {
-            this.gameOver();
-            return;
+        //判断游戏时间处理不同逻辑
+        switch (true) {
+            case this.spendTime >= this.totalTime * 1000:
+                this.gameOver();
+                return;
+            case this.spendTime >= 40 * 1000:
+                this.level = 3;
+                this.drawOnce(cakeConf.lessBoom);
+                break;
+            case this.spendTime >= 30 * 1000:
+                this.drawOnce(cakeConf.clock);
+                break;
+            case this.spendTime >= 20 * 1000:
+                this.level = 2;
+                this.drawOnce(cakeConf.carrot);
+                break;
+            case this.spendTime >= 10 * 1000:
+                this.drawOnce(cakeConf.basket);
+                break;
         }
         this.lastTick = time;
         //处理兔子的逻辑
@@ -386,9 +414,18 @@ define(function (require, exports, module) {
                 rabbit.rightFrame = ((rabbit.rightCount / rabbitConf.frameInterval) | 0) % rabbitConf.frameLength;
                 break;
         }
+        //需要画hao123月饼
+        if (this.needDrawHao123 && ((this.totalTime - this.spendTime / 1000) | 0) <= 5) {
+            if (!this.drawingHao123) {
+                this.drawingHao123 = true;
+                this.drawHao123();
+            }
+        }
         //随机创建月饼
-        if (++this.gameFrame % 30 == 0) {
-            drawMooncakeRan.call(this);
+        else {
+            if (++this.gameFrame % 30 == 0) {
+                drawMooncakeRan.call(this);
+            }
         }
         //处理月饼下落逻辑
         while (cakeLen--) {
@@ -422,8 +459,24 @@ define(function (require, exports, module) {
                             this.gameOver();
                         }
                         break;
+                    case cakeConf.clock: //时钟
+                        this.cakeAudioPool.play();
+                        this.totalTime += 30;
+                        break;
+                    case cakeConf.carrot: //胡萝卜
+                        this.cakeAudioPool.play();
+                        this.restLife++;
+                        break;
+                    case cakeConf.lessBoom: //少雷
+                        this.cakeAudioPool.play();
+                        this.difficulty = 1;
+                        break;
+                    case cakeConf.basket: //加大篮筐
+                        this.cakeAudioPool.play();
+                        this.rabbit.type = 1;
+                        this.rabbit.width = rabbitConf.widths[this.rabbit.type];
+                        break;
                     default:
-                        //播放背景音乐
                         this.cakeAudioPool.play();
                         this.score += cake.value;
                         switch (true) {
@@ -445,6 +498,14 @@ define(function (require, exports, module) {
             }
         }
     };
+
+    /*道具只掉落一次*/
+    Game.prototype.drawOnce = function (type) {
+        if (!this.onceMap[type]) {
+            this.onceMap[type] = 1;
+            this.drawMoonCake(type, images.icon.img, speedMap[(Math.random() * 4) | 0]);
+        }
+    }
 
     /*炸弹爆炸动画*/
     Game.prototype.drawBoom = function (x, y) {
@@ -469,7 +530,7 @@ define(function (require, exports, module) {
         var me = this;
         this.state = state.end;
         this.stage.remove(this.rabbit);
-        me.bgAudioPool.stop();
+        //me.bgAudioPool.stop();
         if (this.result == resultConf.win) {
             this.winAudioPool.play();
             this.drawWin(function () {

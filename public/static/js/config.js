@@ -2,8 +2,8 @@
 
     var DEFALUT_SETTINGS = {
         game: {
-            life: 1,
-            time: 60,
+            life: 2,
+            time: 10,
             rabbitType: 0,
             difficulty: 0
         },
@@ -67,7 +67,11 @@
             normal: 1,
             big: 2,
             huge: 3,
-            boom: 4
+            boom: 4,
+            clock: 5,
+            carrot: 6,
+            lessBoom: 7,
+            basket: 8
         },
         result: {
             win: 0,
@@ -86,9 +90,10 @@
         },
         hao: {
             chance: 0.5,
-            speed: 4,
-            type: 2,
-            space: 24
+            speed: 2,
+            type: 1,
+            space: 24,
+            size: 40
         }
     }
 
