@@ -149,14 +149,16 @@ define(function (require, exports, module) {
         this.drawMoonCake(type, images.icon.img, speed);
     }
 
-    function Game() { }
+    function Game() {
+        this.state = state.uninit;
+    }
 
     Game.prototype = new Stage();
 
     Game.prototype.init = function (context) {
         var me = this;
-        if (this.state >= state.start)
-            return;
+        if (this.state == state.start)
+            return false;
         this.state = state.start;
         Stage.call(this, context, canvasConf.width, canvasConf.height);
         this.preloadImage(function (success) {
@@ -170,8 +172,9 @@ define(function (require, exports, module) {
                 me.totalTime = gameConf.time;
                 me.rabbitType = gameConf.rabbitType;
                 me.restLife = gameConf.life;
-                me.moonCakes = [];
+                me.disposed = false;
                 me.needDrawHao123 = Math.random() <= haoConf.chance;
+                me.moonCakes = [];
                 me.onceMap = {};
                 // this.rabbit = new Rabbit();
                 //this.add(this.rabbit);
@@ -194,7 +197,9 @@ define(function (require, exports, module) {
             } else {
                 throw new Error("fail to load images");
             }
+
         });
+        return true;
     };
 
     /*图片预加载*/
@@ -528,7 +533,6 @@ define(function (require, exports, module) {
     /*游戏结束*/
     Game.prototype.gameOver = function () {
         var me = this;
-        this.state = state.end;
         this.stage.remove(this.rabbit);
         //me.bgAudioPool.stop();
         if (this.result == resultConf.win) {
@@ -548,15 +552,44 @@ define(function (require, exports, module) {
 
     /*资源释放*/
     Game.prototype.dispose = function () {
-        this.stop();
-        this.unbindEvent();
-        this.rabbit = null;
-        this.bgAudioPool = null;
-        this.cakeAudioPool = null;
-        this.boomAudioPool = null;
-        this.winAudioPool = null;
-        this.loseAudioPool = null;
+        if (!this.disposed) {
+            this.state = state.end;
+            this.disposed = true;
+            this.stop();
+            this.unbindEvent();
+            this.rabbit = null;
+            this.bgAudioPool = null;
+            this.cakeAudioPool = null;
+            this.boomAudioPool = null;
+            this.winAudioPool = null;
+            this.loseAudioPool = null;
+        }
     };
+
+    /*游戏退出*/
+    Game.prototype.exit = function () {
+        if (this.state == state.uninit)
+            return;
+        var cakeLen = this.moonCakes.length,
+            cake,
+            sprites = this.stage.children,
+            spriteLen = sprites.length,
+            sprite;
+        this.tick.stop();
+        this.dispose();
+        while (cakeLen--) {
+            cake = this.moonCakes[cakeLen];
+            cake.parent.remove(cake);
+        }
+        while (spriteLen--) {
+            sprite = sprites[spriteLen];
+            sprite.parent.remove(sprite);
+        }
+        this.remove(this.stage);
+        this.context.clearRect(0, 0, this.width, this.height);
+        this.state = state.uninit;
+    };
+
 
     /*游戏胜利动画*/
     Game.prototype.drawWin = function (callback) {
@@ -576,7 +609,6 @@ define(function (require, exports, module) {
 
         return this;
     };
-
     /*游戏失败动画*/
     Game.prototype.drawLose = function (callback) {
         var lose = new Sprite(drawAnimation);

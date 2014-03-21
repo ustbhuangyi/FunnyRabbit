@@ -7,13 +7,25 @@ define(function (require) {
         config = require("config");
 
     $(document).ready(function () {
-        var canvas = document.getElementById("mainCanvas"),
-            context = canvas.getContext("2d");
+        var canvas = $("#mainCanvas").get(0),
+            context = canvas.getContext("2d"),
+            $close = $('#close'),
+            $start = $('#start');
+
         canvas.height = config.get("canvas.height");
         canvas.width = config.get("canvas.width");
 
-        if (context)
-            game.init(context);
+        $start.click(function () {
+            if (context && game.init(context)) {
+                $close.show();
+            }
+        });
+
+        $close.click(function () {
+            game.exit();
+            $(this).hide();
+        });
+
     });
 
 

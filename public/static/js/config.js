@@ -3,7 +3,7 @@
     var DEFALUT_SETTINGS = {
         game: {
             life: 2,
-            time: 10,
+            time: 60,
             rabbitType: 0,
             difficulty: 0
         },
