@@ -2,8 +2,8 @@
 define(function (require) {
 
     var $ = require("jquery"),
-        game = require("game"),
         util = require("util"),
+        game = require("game"),
         config = require("config");
 
     $(document).ready(function () {
