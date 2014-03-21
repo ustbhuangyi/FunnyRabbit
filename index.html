@@ -1,79 +1,98 @@
-<!DOCTYPE html>
+﻿<!doctype html>
 <html>
-
-  <head>
-    <meta charset='utf-8' />
-    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="Funnyrabbit : 基于canvas开发的有趣的兔子接月饼小游戏" />
-
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
-
-    <title>Funnyrabbit</title>
-  </head>
-
-  <body>
-
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/ustbhuangyi/FunnyRabbit">View on GitHub</a>
-
-          <h1 id="project_title">Funnyrabbit</h1>
-          <h2 id="project_tagline">基于canvas开发的有趣的兔子接月饼小游戏</h2>
-
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/ustbhuangyi/FunnyRabbit/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/ustbhuangyi/FunnyRabbit/tarball/master">Download this project as a tar.gz file</a>
-            </section>
-        </header>
+<head>
+<meta charset="utf-8">
+<title>FunnyRabbit</title>
+<link rel="stylesheet" href="static/css/reset.css" type="text/css" />
+<style>
+    #content
+    {
+        width:1000px;
+        margin:0 auto;
+        position:relative;
+    }
+    #mainCanvas
+    {
+       width:1000px;
+       height:650px;
+       background:url(http://s0.hao123img.com/res/r/image/2013-09-16/6d091982797ffe4f8aef2d1c99aa4bd7.jpg) no-repeat -650px 0 #fbf4d7;
+    }
+    #close
+    {
+       position:absolute;
+       width:95px;
+       height:45px;
+       left:920px;
+       top:510px;
+       cursor:pointer;
+       z-index:1;
+       display:none;
+    }
+    #start
+    {
+        float:right;
+    }
+    .button 
+    {
+        display: inline-block;
+        outline: none;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        font: 20px/100% 'Microsoft yahei',Arial, Helvetica, sans-serif;
+        padding: .5em 2em .55em;
+        text-shadow: 0 1px 1px rgba(0,0,0,.3);
+        -webkit-border-radius: .5em; 
+        -moz-border-radius: .5em;
+        border-radius: .5em;
+        -webkit-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+        -moz-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+        box-shadow: 0 1px 2px rgba(0,0,0,.2);
+    }
+    .button:hover 
+    {
+        text-decoration: none;
+    }
+    .button:active 
+    {
+        position: relative;
+        top: 1px;
+    }
+    /* orange */
+    .orange 
+    {
+        color: #fef4e9;
+        border: solid 1px #da7c0c;
+        background: #f78d1d;
+        background: -webkit-gradient(linear, left top, left bottom, from(#faa51a), to(#f47a20));
+        background: -moz-linear-gradient(top,  #faa51a,  #f47a20);
+        filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#faa51a', endColorstr='#f47a20');
+    }
+    .orange:hover 
+    {
+        background: #f47c20;
+        background: -webkit-gradient(linear, left top, left bottom, from(#f88e11), to(#f06015));
+        background: -moz-linear-gradient(top,  #f88e11,  #f06015);
+        filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#f88e11', endColorstr='#f06015');
+    }
+    .orange:active 
+    {
+        color: #fcd3a5;
+        background: -webkit-gradient(linear, left top, left bottom, from(#f47a20), to(#faa51a));
+        background: -moz-linear-gradient(top,  #f47a20,  #faa51a);
+        filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#f47a20', endColorstr='#faa51a');
+    }
+</style>
+</head>
+<body>
+    <div id="content">
+        <canvas id="mainCanvas">Your browser does not support the canvas element.</canvas>
+        <div id="close"></div>
+        <div id="start" class="button orange">开始游戏</div>
     </div>
-
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
-
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
-
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
-
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
-
-<h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
-
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
-
-<h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
-
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
-
-<h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
-
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
-
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
-
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
-      </section>
-    </div>
-
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">Funnyrabbit maintained by <a href="https://github.com/ustbhuangyi">ustbhuangyi</a></p>
-        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
-      </footer>
-    </div>
-
-    
-
-  </body>
+	<script type="text/javascript">
+	    var require = { urlArgs: 'v=1.0.0' };
+	</script>
+    <script data-main="static/js/main" src="static/js/require.js"></script>
+</body>
 </html>
