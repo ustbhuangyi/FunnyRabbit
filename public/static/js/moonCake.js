@@ -1,6 +1,6 @@
 /*
 *           File:  moonCake.js
-*    Description:  月饼类，包扩月饼创建，下落，消失等逻辑处理和炸弹爆炸动画展现
+*    Description:  月饼类，负责月饼渲染
 *
 */
 define(function (require, exports, module) {
