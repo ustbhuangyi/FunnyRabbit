@@ -1,6 +1,6 @@
 /*
 *           File:  rabbit.js
-*    Description:  兔子类，包括兔子推车，胜利，被炸等逻辑处理和动画展示
+*    Description:  兔子类，负责兔子的渲染
 *
 */
 define(function (require, exports, module) {

@@ -1,11 +1,7 @@
 /*
 * 
 *           File:  game.js
-*           Path:  /widget/zhongqiu/game.js
-*         Author:  HuangYi
-*       Modifier:  HuangYi
-*       Modified:  2013-8-29
-*    Description:  游戏类，整个游戏的控制中心，包括游戏的开始、结束、退出；场景创建，加分逻辑判断，生命值，倒计时，记分牌等。
+*    Description:  游戏类，整个游戏的控制中心，包括游戏的开始、结束、退出；场景创建，兔子，月饼，加分，生命值，倒计时，记分牌等逻辑处理。
 *
 */
 define(function (require, exports, module) {
@@ -578,7 +574,7 @@ define(function (require, exports, module) {
         this.tick.stop();
         this.dispose();
         while (cakeLen--) {
-            cake = this.moonCakes[cakeLen];
+            cake = this.moonCakes.pop();
             cake.parent.remove(cake);
         }
         while (spriteLen--) {
