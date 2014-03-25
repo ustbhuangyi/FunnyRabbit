@@ -15,10 +15,12 @@ define(function (require) {
         canvas.height = config.get("canvas.height");
         canvas.width = config.get("canvas.width");
 
-        $start.click(function () {
-            if (context && game.init(context)) {
-                $close.show();
-            }
+        $start.fadeIn(function () {
+            $start.click(function () {
+                if (context && game.init(context)) {
+                    $close.show();
+                }
+            })
         });
 
         $close.click(function () {
