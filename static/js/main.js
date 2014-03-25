@@ -20,7 +20,7 @@ define(function (require) {
                 if (context && game.init(context)) {
                     $close.show();
                 }
-            })
+            });
         });
 
         $close.click(function () {
