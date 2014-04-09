@@ -638,18 +638,11 @@ define(function (require, exports, module) {
             me.onKeyUp(e);
         }
 
+        /*清除事件绑定*/
         this.unbindEvent = function () {
             document.removeEventListener("keydown", onkeyDown, false);
             document.removeEventListener("keyup", onkeyUp, false);
         };
-    };
-
-
-    /*清除事件绑定*/
-    Game.prototype.unbindEvent = function () {
-        var me = this;
-        document.addEventListener("keydown", me.onKeyDown, false);
-        document.addEventListener("keyup", me.onKeyUp, false);
     };
 
     /*键盘按下*/
