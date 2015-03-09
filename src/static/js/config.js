@@ -12,37 +12,33 @@
             height: 650
         },
         image: {
-            bg: "http://s0.hao123img.com/res/img/zhongqiu-bg.png",
-            icon: "http://s0.hao123img.com/res/img/zhongqiu-icon.png",
-            rabbitBig: "http://s0.hao123img.com/res/img/rabbit-big.png",
-            rabbitSmall: "http://s0.hao123img.com/res/img/rabbit-small.png",
-            boom: "http://s0.hao123img.com/res/img/boom.png",
-            rabbitLose: "http://s0.hao123img.com/res/img/rabbit-lose.png",
-            rabbitWin: "http://s0.hao123img.com/res/img/rabbit-win.png",
-            popup: "http://s0.hao123img.com/res/img/zhongqiu-popupbg.png",
-            popupWin: "http://s0.hao123img.com/res/img/zhongqiu-win.png",
-            popupLose: "http://s0.hao123img.com/res/img/zhongqiu-lose.png",
-            nums: "http://s0.hao123img.com/res/img/zhongqiu-nums.png"
+            bg: "/static/image/zhongqiu-bg.png",
+            icon: "/static/image/zhongqiu-icon.png",
+            rabbitBig: "/static/image/rabbit-big.png",
+            rabbitSmall: "/static/image/rabbit-small.png",
+            boom: "/static/image/boom.png",
+            rabbitLose: "/static/image/rabbit-lose.png",
+            rabbitWin: "/static/image/rabbit-win.png"
         },
         sound: {
             bg: {
-                mp3: "http://s1.hao123img.com/res/swf/zhongqiubg.mp3"
+                mp3: "/static/music/zhongqiubg.mp3"
             },
             cake: {
-                ogg: "http://s0.hao123img.com/res/swf/sound/get.ogg",
-                mp3: "http://s0.hao123img.com/res/swf/sound/get.mp3"
+                ogg: "/static/music/get.ogg",
+                mp3: "/static/music/get.mp3"
             },
             boom: {
-                ogg: "http://s0.hao123img.com/res/swf/sound/boom.ogg",
-                mp3: "http://s0.hao123img.com/res/swf/sound/boom.mp3"
+                ogg: "/static/music/boom.ogg",
+                mp3: "/static/music/boom.mp3"
             },
             win: {
-                ogg: "http://s0.hao123img.com/res/swf/sound/win.ogg",
-                mp3: "http://s0.hao123img.com/res/swf/sound/win.mp3"
+                ogg: "/static/music/win.ogg",
+                mp3: "/static/music/win.mp3"
             },
             lose: {
-                ogg: "http://s0.hao123img.com/res/swf/sound/lose.ogg",
-                mp3: "http://s0.hao123img.com/res/swf/sound/lose.mp3"
+                ogg: "/static/music/lose.ogg",
+                mp3: "/static/music/lose.mp3"
             }
         },
         rabbit: {
