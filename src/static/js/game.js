@@ -1,5 +1,5 @@
 /*
-* 
+*
 *           File:  game.js
 *    Description:  游戏类，整个游戏的控制中心，包括游戏的开始、结束、退出；场景创建，兔子，月饼，加分，生命值，倒计时，记分牌等逻辑处理。
 *
@@ -586,7 +586,6 @@ define(function (require, exports, module) {
         this.state = state.uninit;
     };
 
-
     /*游戏胜利动画*/
     Game.prototype.drawWin = function (callback) {
         var win = new Sprite(drawAnimation);
@@ -605,6 +604,7 @@ define(function (require, exports, module) {
 
         return this;
     };
+
     /*游戏失败动画*/
     Game.prototype.drawLose = function (callback) {
         var lose = new Sprite(drawAnimation);
