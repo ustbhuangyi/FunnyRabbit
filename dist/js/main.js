@@ -207,54 +207,6 @@ for (var i in res) {
   g_resources.push(res[i]);
 }
 
-var GamePlayScene  = cc.Scene.extend({
-  onEnter:function () {
-    this._super();
-
-    var layer = new GamePlayLayer();
-    this.addChild(layer);
-
-  }
-});
-
-var GamePlayLayer = cc.Layer.extend({
-
-  backgroundLayer : null,
-  touchLayer : null,
-  ctor : function(){
-    this._super();
-
-    this.addCache();
-
-    this.addBackgroundLayer();
-
-    this.addTouchLayer();
-  },
-
-  addCache : function(){
-
-    //将plist添加到缓存
-    cc.spriteFrameCache.addSpriteFrames(res.rabbit_small_plist);
-    cc.spriteFrameCache.addSpriteFrames(res.rabbit_big_plist);
-    cc.spriteFrameCache.addSpriteFrames(res.rabbit_win_plist);
-    cc.spriteFrameCache.addSpriteFrames(res.rabbit_lose_plist);
-    cc.spriteFrameCache.addSpriteFrames(res.icons_plist);
-    cc.spriteFrameCache.addSpriteFrames(res.explosion_plist);
-  },
-
-
-  addBackgroundLayer : function(){
-
-    this.backgroundLayer = new GPBackgroundLayer();
-    this.addChild(this.backgroundLayer);
-  },
-
-  addTouchLayer : function(){
-    this.touchLayer = new GPTouchLayer();
-    this.addChild(this.touchLayer);
-  }
-});
-
 var GPBackgroundLayer = cc.LayerColor.extend({
 
   ctor: function (color) {
@@ -689,9 +641,9 @@ var GPTouchLayer = cc.Layer.extend({
       var letter = GC.hao123Map[i];
       for (var j = 0, len = letter.length; j < len; j++) {
         var position = letter[j];
-        var x = position[0] * GC.hao123.size + GC.hao123.space * i;
+        var x = position[0] * GC.hao123.size + GC.hao123.space * i + GC.hao123.size / 2;
         var y = GC.h - position[1] * GC.hao123.size;
-        var speed =  y * GC.hao123.speed / GC.h;
+        var speed = y * GC.hao123.speed / GC.h;
         this.createMoonCake(GC.hao123.type, speed, x, y);
       }
     }
@@ -939,6 +891,54 @@ var GPTouchLayer = cc.Layer.extend({
 
   }
 
+});
+
+var GamePlayScene  = cc.Scene.extend({
+  onEnter:function () {
+    this._super();
+
+    var layer = new GamePlayLayer();
+    this.addChild(layer);
+
+  }
+});
+
+var GamePlayLayer = cc.Layer.extend({
+
+  backgroundLayer : null,
+  touchLayer : null,
+  ctor : function(){
+    this._super();
+
+    this.addCache();
+
+    this.addBackgroundLayer();
+
+    this.addTouchLayer();
+  },
+
+  addCache : function(){
+
+    //将plist添加到缓存
+    cc.spriteFrameCache.addSpriteFrames(res.rabbit_small_plist);
+    cc.spriteFrameCache.addSpriteFrames(res.rabbit_big_plist);
+    cc.spriteFrameCache.addSpriteFrames(res.rabbit_win_plist);
+    cc.spriteFrameCache.addSpriteFrames(res.rabbit_lose_plist);
+    cc.spriteFrameCache.addSpriteFrames(res.icons_plist);
+    cc.spriteFrameCache.addSpriteFrames(res.explosion_plist);
+  },
+
+
+  addBackgroundLayer : function(){
+
+    this.backgroundLayer = new GPBackgroundLayer();
+    this.addChild(this.backgroundLayer);
+  },
+
+  addTouchLayer : function(){
+    this.touchLayer = new GPTouchLayer();
+    this.addChild(this.touchLayer);
+  }
 });
 
 var ExplosionSprite = cc.Sprite.extend({

@@ -3,3 +3,4 @@ npm-debug.log
 res/
 .idea/
 .DS_Store
+dest/
