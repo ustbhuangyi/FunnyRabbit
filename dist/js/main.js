@@ -1,3 +1,232 @@
+cc.game.onStart = function(){
+
+  //load resources
+  cc.LoaderScene.preload(g_resources, function () {
+    //cc.director.setProjection(cc.Director.PROJECTION_2D);
+    cc.director.runScene(new GamePlayScene());
+  }, this);
+};
+cc.game.run();
+
+var GC = GC || {};
+
+//游戏难度
+GC.DIFFICULTY = {
+  EASY: 0,
+  NORMAL: 1
+};
+
+//月饼种类
+GC.CAKE = {
+  BOOM: 0,
+  SMALL: 1,
+  NORMAL: 2,
+  BIG: 3,
+  HUGE: 4
+};
+
+//兔子大小
+GC.RABBIT = {
+  BIG: 'b',
+  SMALL: 's'
+};
+
+//道具种类
+GC.PROP = {
+  CLOCK: 'clock',
+  CARROT: 'carrot',
+  LESSBOOM: 'lessboom',
+  BASKET: 'basket'
+};
+
+//兔子移动的方向
+GC.MOVING = {
+  LEFT: 'l',
+  RIGHT: 'r',
+  STOP: 's',
+  UP: 'u'
+};
+
+//游戏状态
+GC.GAME_STATE = {
+  PLAY: 1,
+  OVER: 2
+};
+
+//游戏结果
+GC.GAME_RESULT = {
+  WIN: 1,
+  LOSE: 2
+};
+
+//篮子状态
+GC.BASKET = {
+  EMPTY: 1,
+  LITTLE: 2,
+  FULL: 3,
+  OVERFLOW: 4
+};
+
+//键盘按键
+GC.KEY_MAP = {
+  37: 'l', // Left
+  38: 'u', // UP
+  39: 'r', // Right
+  65: 'l', // A
+  87: 'u', // W
+  68: 'r' // D
+};
+
+//屏幕尺寸
+GC.winSize = cc.size(1000, 600);
+
+GC.h = GC.winSize.height;
+
+GC.w = GC.winSize.width;
+
+GC.w_2 = GC.w / 2;
+
+GC.h_2 = GC.h / 2;
+
+//游戏帧频
+GC.defaultInterval = 1 / 60;
+
+//生命值
+GC.life = 2;
+
+//倒计时长
+GC.totalTime = 60;
+
+//游戏难度，指炸弹概率
+GC.difficulty = GC.DIFFICULTY.NORMAL;
+
+//记分牌位数
+GC.scoreLen = 7;
+
+//倒计时位数
+GC.timeLen = 2;
+
+//音乐开关
+GC.musicOn = true;
+
+//兔子相关设置
+GC.rabbit = {
+  x: 600,
+  y: 50,
+  maxRunSpeed: 30,
+  maxJumpSpeed: 30,
+  direction: GC.MOVING.LEFT,
+  type: GC.RABBIT.SMALL,
+  basket: GC.BASKET.EMPTY,
+  frameLength: 6,
+  frameInterval: 6,
+  step: {
+    l: 3,
+    r: 4
+  },
+  stepJump: {
+    l: 4,
+    r: 3
+  }
+};
+
+//炸弹概率，游戏难度而定
+GC.difficultyMap = [0.05, 0.1];
+
+//月饼下落速度
+GC.speedMap = [3, 4, 5, 6];
+
+//月饼分值
+GC.valueMap = [0, 500, 1000, 2000, 5000];
+
+//篮子可改变的积分值
+GC.score = {
+  little: 20000,
+  full: 50000,
+  overflow: 100000
+};
+
+//hao123的位置，参考坐标系是左上角
+GC.hao123Map = [
+  [
+    [0, 0], [0, 1], [0, 2], [0, 3], [0, 4], [1, 1], [2, 1], [3, 2], [3, 3], [3, 4]
+  ], //h
+  [
+    [4, 2], [4, 3], [5, 1], [5, 4], [6, 1], [6, 4], [7, 1], [7, 2], [7, 3], [7, 4]
+  ], //a
+  [
+    [8, 2], [8, 3], [9, 1], [9, 4], [10, 1], [10, 4], [11, 2], [11, 3]
+  ], //o
+  [
+    [12, 0], [13, 0], [13, 1], [13, 2], [13, 3], [13, 4]
+  ], //1
+  [
+    [14, 0], [14, 3], [14, 4], [15, 0], [15, 2], [15, 4], [16, 0], [16, 2], [16, 4], [17, 1], [17, 4]
+  ], //2
+  [
+    [18, 0], [18, 4], [19, 0], [19, 2], [19, 4], [20, 0], [20, 2], [20, 4], [21, 1], [21, 3]
+  ]//3
+];
+
+GC.hao123 = {
+  speed: 5,
+  type: 2,
+  space: 24,
+  size: 40
+}
+
+var res = {
+  rabbit_small_plist: 'image/rabbit-small.plist',
+  rabbit_small_png: 'image/rabbit-small.png',
+  rabbit_big_plist: 'image/rabbit-big.plist',
+  rabbit_big_png: 'image/rabbit-big.png',
+  rabbit_win_plist: 'image/rabbit-win.plist',
+  rabbit_win_png: 'image/rabbit-win.png',
+  rabbit_lose_plist: 'image/rabbit-lose.plist',
+  rabbit_lose_png: 'image/rabbit-lose.png',
+  icons_plist: 'image/icons.plist',
+  icons_png: 'image/icons.png',
+  explosion_plist: 'image/explosion.plist',
+  explosion_png: 'image/explosion.png',
+  background: 'image/background.jpg',
+
+  bg_music: 'music/gamebg.mp3',
+  cake_music: 'music/cake.mp3',
+  boom_music: 'music/boom.mp3',
+  win_music: 'music/win.mp3',
+  lose_music: 'music/lose.mp3',
+  lessboom_music: 'music/lessboom.mp3',
+  clock_music: 'music/clock.mp3',
+  life_music: 'music/life.mp3',
+  basket_music: 'music/basket.mp3',
+  jump_music: 'music/jump.mp3'
+};
+
+var g_resources = [];
+for (var i in res) {
+  g_resources.push(res[i]);
+}
+
+var GPBackgroundLayer = cc.LayerColor.extend({
+
+  ctor: function (color) {
+
+    this._super(color);
+
+    this.initBackground();
+
+  },
+
+  initBackground: function () {
+    var sptBg = new cc.Sprite(res.background);
+    sptBg.attr({
+      x: GC.w_2,
+      y: GC.h_2
+    });
+    this.addChild(sptBg);
+  }
+});
+
 //当前层对外引用
 var g_GPTouchLayer;
 
@@ -662,4 +891,454 @@ var GPTouchLayer = cc.Layer.extend({
 
   }
 
+});
+
+var ExplosionSprite = cc.Sprite.extend({
+
+  ctor: function () {
+    var frame = cc.spriteFrameCache.getSpriteFrame('explosion-1.png');
+    this._super(frame);
+  },
+  play: function () {
+    var animFrames = [];
+    var str = '';
+    var frame;
+    for (var i = 1; i < 5; i++) {
+      str = 'explosion-' + i + '.png';
+      frame = cc.spriteFrameCache.getSpriteFrame(str);
+      animFrames.push(frame);
+    }
+    var animation = new cc.Animation(animFrames, 0.2);
+
+    this.runAction(cc.sequence(
+      cc.animate(animation),
+      cc.callFunc(this.destroy, this)
+    ));
+
+    if (GC.musicOn) {
+      cc.audioEngine.playEffect(res.boom_music);
+    }
+  },
+
+  destroy: function () {
+    g_GPTouchLayer.texExplosionBatch.removeChild(this);
+  }
+});
+
+var LifeSprite = cc.Sprite.extend({
+
+  ctor: function (value) {
+    this._super();
+    this.value = value;
+    var frame = this.getLifeFrame();
+    this.setSpriteFrame(frame);
+  },
+  getLifeFrame: function () {
+    var frameName = 'life-' + this.value + '.png';
+    var frame = cc.spriteFrameCache.getSpriteFrame(frameName);
+    return frame;
+  },
+  update: function (value) {
+    this.value = value;
+    var frame = this.getLifeFrame();
+    this.setSpriteFrame(frame);
+  }
+});
+
+var MoonCakeSprite = cc.Sprite.extend({
+
+  ctor: function (type) {
+    this._super();
+    this.hp = 1;
+    this.value = GC.valueMap[type];
+    this.type = type;
+    this.active = true;
+    var frame = this.getMoonCakeFrame();
+    this.setSpriteFrame(frame);
+  },
+  getMoonCakeFrame: function () {
+    var frameName = this.type === GC.CAKE.BOOM ? 'boom.png' : 'cake-' + this.type + '.png';
+    var frame = cc.spriteFrameCache.getSpriteFrame(frameName);
+    return frame;
+  },
+
+  update: function () {
+
+    var h_2 = this.height / 2 | 0;
+    //5个像素的buffer
+    if (this.y <= h_2 + 5) {
+      this.active = false;
+    }
+    if (this.hp <= 0) {
+      this.destroy();
+    }
+  },
+
+  destroy: function () {
+    this.visible = false;
+    this.active = false;
+    g_GPTouchLayer.texIconsBatch.removeChild(this);
+  },
+
+  hurt: function () {
+    if (this.hp > 0) {
+      this.hp--;
+    }
+  },
+
+  collideRect: function (x, y) {
+    var w = this.width, h = this.height;
+    return cc.rect(x - w / 2, y - h / 2, w, h);
+  }
+});
+
+MoonCakeSprite.getOrCreateMoonCake = function (type) {
+
+  var moonCake;
+
+  for (var i = 0, len = MoonCakeSprite.moonCakes.length; i < len; i++) {
+    moonCake = MoonCakeSprite.moonCakes[i];
+    if (moonCake.active === false && moonCake.visible === false && moonCake.type === type) {
+      moonCake.hp = 1;
+      moonCake.opacity = 255;
+      moonCake.visible = true;
+      moonCake.active = true;
+
+      return moonCake;
+    }
+  }
+
+  moonCake = MoonCakeSprite.create(type);
+
+  return moonCake;
+};
+
+MoonCakeSprite.create = function (type) {
+
+  var moonCake = new MoonCakeSprite(type);
+
+  MoonCakeSprite.moonCakes.push(moonCake);
+
+  return moonCake;
+
+};
+
+var PlusSprite = cc.Sprite.extend({
+
+  ctor: function (value) {
+    this._super();
+    this.value = value;
+    this.active = true;
+    var frame = this.getPlusFrame();
+    this.setSpriteFrame(frame);
+  },
+  getPlusFrame: function () {
+    var frameName = 'plus-' + GC.valueMap.indexOf(this.value) + '.png';
+    var frame = cc.spriteFrameCache.getSpriteFrame(frameName);
+    return frame;
+  },
+
+  destroy: function () {
+    this.visible = false;
+    this.active = false;
+    g_GPTouchLayer.texIconsBatch.removeChild(this);
+  }
+});
+
+PlusSprite.getOrCreatePlus = function (value) {
+
+  var plus;
+
+  for (var i = 0, len = PlusSprite.pluses.length; i < len; i++) {
+    plus = PlusSprite.pluses[i];
+    if (plus.active === false && plus.visible === false && plus.value === value) {
+
+      plus.opacity = 255;
+      plus.visible = true;
+      plus.active = true;
+
+      return plus;
+    }
+  }
+
+  plus = PlusSprite.create(value);
+
+  return plus;
+};
+
+PlusSprite.create = function (value) {
+
+  var plus = new PlusSprite(value);
+
+  PlusSprite.pluses.push(plus);
+
+  return plus;
+
+};
+
+var PropSprite = cc.Sprite.extend({
+
+  ctor: function (type) {
+    this._super();
+    this.hp = 1;
+    this.value = GC.valueMap[type];
+    this.active = true;
+    this.type = type;
+    var frame = this.getPropFrame();
+    this.setSpriteFrame(frame);
+  },
+  getPropFrame: function () {
+    var frameName = this.type + '.png';
+    var frame = cc.spriteFrameCache.getSpriteFrame(frameName);
+    return frame;
+  },
+
+  update: function () {
+
+    var h_2 = this.height / 2 | 0;
+    //5个像素的buffer
+    if (this.y <= h_2 + 5) {
+      this.active = false;
+    }
+    if (this.hp <= 0) {
+      this.destroy();
+    }
+  },
+
+  destroy: function () {
+    this.active = false;
+    g_GPTouchLayer.texIconsBatch.removeChild(this);
+  },
+
+  hurt: function () {
+    if (this.hp > 0) {
+      this.hp--;
+    }
+  },
+
+  collideRect: function (x, y) {
+    var w = this.width, h = this.height;
+    return cc.rect(x - w / 2, y - h / 2, w, h);
+  }
+});
+
+var RabbitLoseSprite = cc.Sprite.extend({
+
+  ctor: function () {
+    var frame = cc.spriteFrameCache.getSpriteFrame('rabbit-lose-1.png');
+    this._super(frame);
+  },
+  play: function () {
+    var animFrames = [];
+    var str = '';
+    var frame;
+    for (var i = 1; i < 14; i++) {
+      str = 'rabbit-lose-' + i + '.png';
+      frame = cc.spriteFrameCache.getSpriteFrame(str);
+      animFrames.push(frame);
+    }
+    var animation = new cc.Animation(animFrames, 0.2);
+
+    this.runAction(cc.sequence(
+      cc.animate(animation)
+    ));
+
+    if (GC.musicOn) {
+      cc.audioEngine.playEffect(res.lose_music);
+    }
+  }
+});
+
+var RabbitSprite = cc.Sprite.extend({
+
+  ctor: function () {
+    this._super();
+    //this._rect = cc.rect(0, 0, this.getContentSize().width, this.getContentSize().height);
+    this.type = GC.rabbit.type;
+    this.direction = GC.rabbit.direction;
+    this.basket = GC.rabbit.basket;
+    this.step = GC.rabbit.step[this.direction];
+    this.moving = GC.MOVING.STOP;
+    this.jumping = false;
+    this.growing = false;
+    this.jumpSpeed = 0;
+    this.jumpUp = false;
+    this.runSpeed = 0;
+    this.leftCount = 0;
+    this.rightCount = 0;
+    this.update();
+  },
+  getRabbitFrame: function () {
+    var frameName = 'rabbit-' + this.type + '-' + this.direction + '-' + this.basket + '-' + this.step + '.png';
+    var frame = cc.spriteFrameCache.getSpriteFrame(frameName);
+    return frame;
+  },
+
+  update: function () {
+    var frame = this.getRabbitFrame();
+    this.setSpriteFrame(frame);
+  },
+  playWin: function () {
+    var rabbitWin = new RabbitWinSprite();
+    rabbitWin.x = this.x;
+    rabbitWin.y = this.y;
+    rabbitWin.play();
+    g_GPTouchLayer.texRabbitWinBatch.addChild(rabbitWin);
+    this.destroy();
+  },
+  playLose: function () {
+    var rabbitLose = new RabbitLoseSprite();
+    rabbitLose.x = this.x;
+    rabbitLose.y = this.y;
+    rabbitLose.play();
+    g_GPTouchLayer.texRabbitLoseBatch.addChild(rabbitLose);
+    this.destroy();
+  },
+  hurt: function (moonCake) {
+    if (moonCake.type === GC.CAKE.BOOM) {
+      var explosion = new ExplosionSprite();
+      explosion.x = moonCake.x;
+      explosion.y = moonCake.y;
+      explosion.play();
+      g_GPTouchLayer.texExplosionBatch.addChild(explosion);
+    } else {
+      var plus = PlusSprite.getOrCreatePlus(moonCake.value);
+      plus.x = moonCake.x;
+      plus.y = moonCake.y;
+      var actionTo = cc.moveTo(0.3, cc.p(plus.x, plus.y + 80));
+      var actionFadeOut = cc.fadeOut(1);
+      var callback = cc.callFunc(function (plus) {
+        plus.destroy();
+      });
+      plus.runAction(cc.sequence(actionTo, actionFadeOut, callback));
+      g_GPTouchLayer.texIconsBatch.addChild(plus);
+
+      if (GC.musicOn) {
+        cc.audioEngine.playEffect(res.cake_music);
+      }
+    }
+  },
+  collideRect: function (x, y) {
+    var w = this.width, h = this.height;
+    return cc.rect(x - w / 2, y - h / 2, w, h);
+  },
+  destroy: function () {
+    this.visible = false;
+  }
+
+});
+
+var RabbitWinSprite = cc.Sprite.extend({
+
+  ctor: function () {
+    var frame = cc.spriteFrameCache.getSpriteFrame('rabbit-win-1.png');
+    this._super(frame);
+  },
+  play: function () {
+    var animFrames = [];
+    var str = '';
+    var frame;
+    for (var i = 1; i < 20; i++) {
+      str = 'rabbit-win-' + i + '.png';
+      frame = cc.spriteFrameCache.getSpriteFrame(str);
+      animFrames.push(frame);
+    }
+    var animation = new cc.Animation(animFrames, 0.2);
+
+    this.runAction(cc.sequence(
+      cc.animate(animation)
+    ));
+
+    if (GC.musicOn) {
+      cc.audioEngine.playEffect(res.win_music);
+    }
+  }
+});
+
+var ScoreSprite = cc.Sprite.extend({
+
+  ctor: function (value) {
+    this._super();
+    this.value = value;
+    var frame = this.getScoreFrame();
+    this.setSpriteFrame(frame);
+  },
+  getScoreFrame: function () {
+    var frameName = 's-' + this.value + '.png';
+    var frame = cc.spriteFrameCache.getSpriteFrame(frameName);
+    return frame;
+  },
+  update: function (value) {
+    this.value = value;
+    var frame = this.getScoreFrame();
+    this.setSpriteFrame(frame);
+  }
+});
+
+var TimeSprite = cc.Sprite.extend({
+
+  ctor: function (value) {
+    this._super();
+    this.value = value;
+    var frame = this.getTimeFrame();
+    this.setSpriteFrame(frame);
+  },
+  getTimeFrame: function () {
+    var frameName = 't-' + this.value + '.png';
+    var frame = cc.spriteFrameCache.getSpriteFrame(frameName);
+    return frame;
+  },
+  update: function (value) {
+    this.value = value;
+    var frame = this.getTimeFrame();
+    this.setSpriteFrame(frame);
+  }
+});
+
+var GamePlayScene  = cc.Scene.extend({
+  onEnter:function () {
+    this._super();
+
+    var layer = new GamePlayLayer();
+    this.addChild(layer);
+
+  }
+});
+
+var GamePlayLayer = cc.Layer.extend({
+
+  backgroundLayer : null,
+  touchLayer : null,
+  ctor : function(){
+    this._super();
+
+    this.addCache();
+
+    this.addBackgroundLayer();
+
+    this.addTouchLayer();
+  },
+
+  addCache : function(){
+
+    //将plist添加到缓存
+    cc.spriteFrameCache.addSpriteFrames(res.rabbit_small_plist);
+    cc.spriteFrameCache.addSpriteFrames(res.rabbit_big_plist);
+    cc.spriteFrameCache.addSpriteFrames(res.rabbit_win_plist);
+    cc.spriteFrameCache.addSpriteFrames(res.rabbit_lose_plist);
+    cc.spriteFrameCache.addSpriteFrames(res.icons_plist);
+    cc.spriteFrameCache.addSpriteFrames(res.explosion_plist);
+  },
+
+
+  addBackgroundLayer : function(){
+
+    this.backgroundLayer = new GPBackgroundLayer();
+    this.addChild(this.backgroundLayer);
+  },
+
+  addTouchLayer : function(){
+    this.touchLayer = new GPTouchLayer();
+    this.addChild(this.touchLayer);
+  }
 });
