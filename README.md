@@ -44,6 +44,6 @@ gulp serve
 ```
 
 ## License
-Cocos2djs-2048 is licensed under the [MIT license.](https://github.com/ustbhuangyi/FunnyRabbit/blob/master/LICENSE)
+licensed under the [MIT license.](https://github.com/ustbhuangyi/FunnyRabbit/blob/master/LICENSE)
 
 
