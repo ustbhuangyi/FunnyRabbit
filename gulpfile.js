@@ -17,7 +17,7 @@ var path = {
   music: ['src/**/*.mp3', 'src/**/*.ogg']
 }
 
-var dest = 'dist/'
+var dest = 'dest/'
 
 gulp.task('js:copy', function () {
   return gulp.src(path.js)
